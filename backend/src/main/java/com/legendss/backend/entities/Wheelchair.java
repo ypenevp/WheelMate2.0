@@ -27,17 +27,21 @@ public class Wheelchair {
     private String location;
 
     @Column(name = "userInChair")
-    private boolean userInChair;
+    private Boolean userInChair;
 
     @Column(name = "panic")
-    private boolean panic;
+    private Boolean panic;
 
     @Column(name = "fakepanic")
-    private boolean fakePanic;
+    private Boolean fakePanic;
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User owner;
+
+    @OneToMany(mappedBy = "wheelchair", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<FakePanic> fakePanics;
 
     @PrePersist
     public void prePersist() {

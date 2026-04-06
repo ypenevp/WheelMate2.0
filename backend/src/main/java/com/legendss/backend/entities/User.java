@@ -37,6 +37,7 @@ public class User {
     private boolean enabled;
 
     @OneToOne(mappedBy = "owner")
+    @JsonIgnore
     private Wheelchair wheelchair;
 
 }

@@ -26,7 +26,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v2/auth/register", "/api/v2/auth/verify", "/api/v2/auth/login").permitAll()
                         .requestMatchers("/api/v2/auth/get").authenticated()
-
+                        .requestMatchers("/api/v2/fakepanic/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
