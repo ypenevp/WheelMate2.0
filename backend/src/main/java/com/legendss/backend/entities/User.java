@@ -6,8 +6,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.List;
-
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Table(name = "users")
@@ -37,4 +35,8 @@ public class User {
     private String password;
 
     private boolean enabled;
+
+    @OneToOne(mappedBy = "owner")
+    private Wheelchair wheelchair;
+
 }
