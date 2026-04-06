@@ -9,7 +9,7 @@ import java.util.List;
 
 @RestController
 @CrossOrigin(origins = "*")
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v2/auth")
 public class AuthController {
 
     private final AuthService authService;
@@ -18,7 +18,7 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/register") //register?role=CARETAKER
+    @PostMapping("/register") //register?role=RELATIVE
     public void register(@RequestBody RegisterRequest request, @RequestParam String role) {
         authService.register(request, role);
     }

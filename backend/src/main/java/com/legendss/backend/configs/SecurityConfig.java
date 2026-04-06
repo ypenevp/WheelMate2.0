@@ -24,23 +24,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/verify", "/api/auth/login").permitAll()
-                        .requestMatchers("/api/auth/me").authenticated()
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v2/auth/register", "/api/v2/auth/verify", "/api/v2/auth/login").permitAll()
+                        .requestMatchers("/api/v2/auth/get").authenticated()
 
-                        .requestMatchers("/api/relationships/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN", "RELATIVE", "CARETAKER")
-                        .requestMatchers("/api/caretakers/**").hasRole("USER")
-
-                        .requestMatchers("/api/wheelchairs/wheelchair/add", "/api/wheelchairs/wheelchair/delete/**").hasRole("USER")
-                        .requestMatchers("/api/wheelchairs/wheelchair/get/**").hasAnyRole("USER", "RELATIVE", "CARETAKER")
-                        .requestMatchers("/api/wheelchairs/wheelchair/update/**").permitAll()
-
-                        .requestMatchers("/api/hardware/**").permitAll()
-
-                        .requestMatchers("/api/wheelchairs/wheelchair/my/associated").hasAnyRole("USER", "RELATIVE", "CARETAKER")
-
-                        .requestMatchers("/api/navigation/**").permitAll()
 
                         .anyRequest().authenticated()
                 )
