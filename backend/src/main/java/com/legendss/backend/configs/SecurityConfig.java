@@ -27,7 +27,6 @@ public class SecurityConfig {
                         //auth
                         .requestMatchers("/api/v2/auth/register", "/api/v2/auth/verify", "/api/v2/auth/login").permitAll()
                         .requestMatchers("/api/v2/auth/get").authenticated()
-
                         //wheelhairs
                         .requestMatchers("/api/v2/wheelchair/add").hasRole("USER")
                         .requestMatchers("/api/v2/wheelchair/update").hasRole("USER")
@@ -36,8 +35,9 @@ public class SecurityConfig {
                         //users functionalities
                         .requestMatchers("/api/v2/wheelchair/add-relative").hasRole("USER")
                         .requestMatchers("/api/v2/wheelchair/relative/my-tracked").hasRole("RELATIVE")
-
-
+                        
+                        //panic logs
+                        .requestMatchers("/api/v2/fakepanic/**").permitAll()
 
                         .anyRequest().authenticated()
                 )

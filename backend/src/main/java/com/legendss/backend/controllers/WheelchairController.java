@@ -28,7 +28,8 @@ public class WheelchairController {
     }
 
     @PostMapping("/add")
-    public ResponseEntity<Wheelchair> addWheelchair(@RequestAttribute("email") String email, @RequestBody WheelchairRequest request) {
+    public ResponseEntity<Wheelchair> addWheelchair(@RequestAttribute("email") String email,
+            @RequestBody WheelchairRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
@@ -45,7 +46,8 @@ public class WheelchairController {
     }
 
     @PutMapping("/update")
-    public ResponseEntity<Wheelchair> editWheelchairName(@RequestAttribute("email") String email, @RequestBody WheelchairRequest request) {
+    public ResponseEntity<Wheelchair> editWheelchairName(@RequestAttribute("email") String email,
+            @RequestBody WheelchairRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
@@ -73,7 +75,8 @@ public class WheelchairController {
     }
 
     @PostMapping("/add-relative")
-    public ResponseEntity<String> addRelative(@RequestAttribute("email") String ownerEmail, @RequestBody RelativeRequest request) {
+    public ResponseEntity<String> addRelative(@RequestAttribute("email") String ownerEmail,
+            @RequestBody RelativeRequest request) {
         User owner = userRepository.findByEmail(ownerEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("Owner not found."));
 
@@ -105,7 +108,8 @@ public class WheelchairController {
             throw new SecurityException("Only users with role RELATIVE can do this.");
         }
 
-        // List<User> trackedUsers = userRepository.findAllByRelativesContaining(relative);
+        // List<User> trackedUsers =
+        // userRepository.findAllByRelativesContaining(relative);
         List<User> trackedUsers = userRepository.findAllUsersByRelativeId(relative.getId());
 
         List<Wheelchair> wheelchairs = new ArrayList<>();
@@ -116,5 +120,10 @@ public class WheelchairController {
         }
 
         return ResponseEntity.ok(wheelchairs);
+    }
+
+    @PatchMapping("update/{id}")
+    public Wheelchair updateWheelchair(@PathVariable Long id, @RequestBody Wheelchair wheelchair) {
+        return wheelchairService.updateWheelchair(id, wheelchair);
     }
 }
