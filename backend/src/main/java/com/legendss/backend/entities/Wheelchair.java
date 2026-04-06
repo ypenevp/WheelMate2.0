@@ -37,6 +37,7 @@ public class Wheelchair {
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
     private User owner;
 
     @PrePersist
