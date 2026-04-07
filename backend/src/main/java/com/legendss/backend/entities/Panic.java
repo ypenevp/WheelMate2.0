@@ -2,23 +2,20 @@ package com.legendss.backend.entities;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
-@Table(name = "fake_panic")
 @Entity
-@Getter
-@Setter
-public class FakePanic {
+@Table(name = "panic")
+@Data
+public class Panic {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "location")
     private String location;
 
-    @Column(name = "userInChair")
+    @Column(name = "user_in_chair")
     private Boolean userInChair;
 
     @Column(name = "timestamp")
@@ -32,6 +29,5 @@ public class FakePanic {
     protected void onCreate() {
         this.timestamp = System.currentTimeMillis();
     }
-
 
 }

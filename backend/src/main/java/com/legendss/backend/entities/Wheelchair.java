@@ -44,6 +44,10 @@ public class Wheelchair {
     @JsonIgnore
     private List<FakePanic> fakePanics;
 
+    @OneToMany(mappedBy = "wheelchair", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Panic> Panics;
+
     @PrePersist
     public void prePersist() {
         userInChair = false;

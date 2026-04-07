@@ -1,7 +1,9 @@
 package com.legendss.backend.services;
 
+import com.legendss.backend.entities.Panic;
 import com.legendss.backend.entities.Wheelchair;
 import com.legendss.backend.exception.ResourceNotFoundException;
+import com.legendss.backend.repositories.PanicRepository;
 import com.legendss.backend.repositories.UserRepository;
 import com.legendss.backend.repositories.WheelchairRepository;
 import org.springframework.stereotype.Service;
@@ -17,12 +19,14 @@ public class WheelchairService {
     private final WheelchairRepository wheelchairRepository;
     private final UserRepository userRepository;
     private final FakePanicRepository fakePanicRepository;
+    private final PanicRepository panicRepository;
 
     public WheelchairService(WheelchairRepository wheelchairRepository, UserRepository userRepository,
-            FakePanicRepository fakePanicRepository) {
+            FakePanicRepository fakePanicRepository, PanicRepository panicRepository) {
         this.wheelchairRepository = wheelchairRepository;
         this.userRepository = userRepository;
         this.fakePanicRepository = fakePanicRepository;
+        this.panicRepository = panicRepository;
     }
 
     public Wheelchair addWheelchair(Wheelchair wheelchair) {
@@ -55,9 +59,16 @@ public class WheelchairService {
             wheelchairToUpdate.setUserInChair(wheelchair.getUserInChair());
         }
 
-        if(wheelchair.getPanic() != null) {
-            wheelchairToUpdate.setPanic(wheelchair.getPanic());
-        }
+         if(wheelchair.getPanic() != null) {
+             if(wheelchair.getPanic() == true){
+                 Panic panic = new Panic();
+                 panic.setLocation(wheelchairToUpdate.getLocation());
+                 panic.setUserInChair(wheelchairToUpdate.getUserInChair());
+                 panic.setWheelchair(wheelchairToUpdate);
+                 this.panicRepository.save(panic);
+             }
+             wheelchairToUpdate.setPanic(wheelchair.getPanic());
+         }
 
         if(wheelchair.getFakePanic() != null){
             if(wheelchair.getFakePanic() == true){
@@ -65,7 +76,7 @@ public class WheelchairService {
                 fakePanic.setLocation(wheelchairToUpdate.getLocation());
                 fakePanic.setUserInChair(wheelchairToUpdate.getUserInChair());
                 fakePanic.setWheelchair(wheelchairToUpdate);
-                fakePanicRepository.save(fakePanic);
+                this.fakePanicRepository.save(fakePanic);
             }
             wheelchairToUpdate.setFakePanic(wheelchair.getFakePanic());
         }
