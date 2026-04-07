@@ -48,7 +48,7 @@ public class WheelchairService {
         return wheelchairRepository.findByOwner(user);
     }
 
-     public Wheelchair updateWheelchair(Long id, Wheelchair wheelchair) {
+    public Wheelchair updateWheelchair(Long id, Wheelchair wheelchair) {
         Wheelchair wheelchairToUpdate = this.getWheelchairById(id);
 
         if(wheelchair.getLocation() != null){
@@ -59,26 +59,32 @@ public class WheelchairService {
             wheelchairToUpdate.setUserInChair(wheelchair.getUserInChair());
         }
 
-         if(wheelchair.getPanic() != null) {
-             if(wheelchair.getPanic() == true){
-                 Panic panic = new Panic();
-                 panic.setLocation(wheelchairToUpdate.getLocation());
-                 panic.setUserInChair(wheelchairToUpdate.getUserInChair());
-                 panic.setWheelchair(wheelchairToUpdate);
-                 this.panicRepository.save(panic);
-             }
-             wheelchairToUpdate.setPanic(wheelchair.getPanic());
-         }
+        if(wheelchair.getPanic() != null) {
+            boolean wasPanicBefore = wheelchairToUpdate.getPanic() != null && wheelchairToUpdate.getPanic(); // !!!
+            boolean isPanicNow = wheelchair.getPanic();
+
+            if(isPanicNow && !wasPanicBefore){
+                Panic panic = new Panic();
+                panic.setLocation(wheelchair.getLocation() != null ? wheelchair.getLocation() : wheelchairToUpdate.getLocation());
+                panic.setUserInChair(wheelchair.getUserInChair() != null ? wheelchair.getUserInChair() : wheelchairToUpdate.getUserInChair());
+                panic.setWheelchair(wheelchairToUpdate);
+                this.panicRepository.save(panic);
+            }
+            wheelchairToUpdate.setPanic(isPanicNow);
+        }
 
         if(wheelchair.getFakePanic() != null){
-            if(wheelchair.getFakePanic() == true){
+            boolean wasFakeBefore = wheelchairToUpdate.getFakePanic() != null && wheelchairToUpdate.getFakePanic(); // !!!
+            boolean isFakeNow = wheelchair.getFakePanic();
+
+            if(isFakeNow && !wasFakeBefore){
                 FakePanic fakePanic = new FakePanic();
-                fakePanic.setLocation(wheelchairToUpdate.getLocation());
-                fakePanic.setUserInChair(wheelchairToUpdate.getUserInChair());
+                fakePanic.setLocation(wheelchair.getLocation() != null ? wheelchair.getLocation() : wheelchairToUpdate.getLocation());
+                fakePanic.setUserInChair(wheelchair.getUserInChair() != null ? wheelchair.getUserInChair() : wheelchairToUpdate.getUserInChair());
                 fakePanic.setWheelchair(wheelchairToUpdate);
                 this.fakePanicRepository.save(fakePanic);
             }
-            wheelchairToUpdate.setFakePanic(wheelchair.getFakePanic());
+            wheelchairToUpdate.setFakePanic(isFakeNow);
         }
 
         return this.wheelchairRepository.save(wheelchairToUpdate);
@@ -88,7 +94,6 @@ public class WheelchairService {
         return wheelchairRepository.findById(id).orElse(null);
     }
 
-    
     public void deleteWheelchair(Long id) {
         this.wheelchairRepository.deleteById(id);
     }

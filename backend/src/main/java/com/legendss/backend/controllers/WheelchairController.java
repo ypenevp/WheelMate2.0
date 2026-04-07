@@ -45,6 +45,17 @@ public class WheelchairController {
         return ResponseEntity.ok(saved);
     }
 
+    @GetMapping("/my") // user can take his wheelchair
+    public ResponseEntity<Wheelchair> getMyWheelchair(@RequestAttribute("email") String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+
+        Wheelchair wheelchair = wheelchairService.getWheelchairByOwner(user)
+                .orElseThrow(() -> new ResourceNotFoundException("You do not have a wheelchair registered."));
+
+        return ResponseEntity.ok(wheelchair);
+    }
+
     @PutMapping("/update")
     public ResponseEntity<Wheelchair> editWheelchairName(@RequestAttribute("email") String email,
             @RequestBody WheelchairRequest request) {

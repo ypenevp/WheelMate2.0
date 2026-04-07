@@ -1,9 +1,10 @@
 package com.legendss.backend.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Table(name = "fake_panic")
 @Entity
@@ -22,7 +23,7 @@ public class FakePanic {
     private Boolean userInChair;
 
     @Column(name = "timestamp")
-    private Long timestamp;
+    private LocalDateTime timestamp;
 
     @ManyToOne
     @JoinColumn(name = "wheelchair_id", nullable = false)
@@ -30,7 +31,7 @@ public class FakePanic {
 
     @PrePersist
     protected void onCreate() {
-        this.timestamp = System.currentTimeMillis();
+        this.timestamp = LocalDateTime.now();
     }
 
 

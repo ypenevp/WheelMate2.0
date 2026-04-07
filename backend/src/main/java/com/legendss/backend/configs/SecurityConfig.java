@@ -27,18 +27,23 @@ public class SecurityConfig {
                         //auth
                         .requestMatchers("/api/v2/auth/register", "/api/v2/auth/verify", "/api/v2/auth/login").permitAll()
                         .requestMatchers("/api/v2/auth/get").authenticated()
+
                         //wheelhairs
                         .requestMatchers("/api/v2/wheelchair/add").hasRole("USER")
                         .requestMatchers("/api/v2/wheelchair/update").hasRole("USER")
                         .requestMatchers("/api/v2/wheelchair/delete").hasRole("USER")
+                        .requestMatchers("/api/v2/wheelchair/my").hasRole("USER")
 
                         //users functionalities
                         .requestMatchers("/api/v2/wheelchair/add-relative").hasRole("USER")
                         .requestMatchers("/api/v2/wheelchair/relative/my-tracked").hasRole("RELATIVE")
                         
-                        //panic logs
-                        .requestMatchers("/api/v2/fakepanic/**").permitAll()
+                        //panic & fakepanic logs
+                        .requestMatchers("/api/v2/panic/relative/my-tracked").hasRole("RELATIVE")
+                        .requestMatchers("/api/v2/fakepanic/relative/my-tracked").hasRole("RELATIVE")
+//                      .requestMatchers("/api/v2/fakepanic/**").permitAll()
 
+                        .requestMatchers("/api/v2/wheelchair/update/{id}").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

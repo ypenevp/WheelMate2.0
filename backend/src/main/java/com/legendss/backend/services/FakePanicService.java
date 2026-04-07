@@ -1,6 +1,7 @@
 package com.legendss.backend.services;
 
 import com.legendss.backend.entities.FakePanic;
+import com.legendss.backend.exception.ResourceNotFoundException;
 import com.legendss.backend.repositories.FakePanicRepository;
 import org.springframework.stereotype.Service;
 
@@ -15,9 +16,9 @@ public class FakePanicService {
     }
 
     public FakePanic getFakePanic(Long id){
-        return fakePanicRepository.findById(id).orElse(null);
+        return this.fakePanicRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("FakePanic not found with id: " + id));
     }
-
     public List<FakePanic> getAllFakePanics(){
         return fakePanicRepository.findAll();
     }

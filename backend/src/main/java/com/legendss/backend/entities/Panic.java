@@ -1,11 +1,15 @@
 package com.legendss.backend.entities;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "panic")
-@Data
+@Getter
+@Setter
 public class Panic {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -19,7 +23,7 @@ public class Panic {
     private Boolean userInChair;
 
     @Column(name = "timestamp")
-    private Long timestamp;
+    private LocalDateTime timestamp;
 
     @ManyToOne
     @JoinColumn(name = "wheelchair_id", nullable = false)
@@ -27,7 +31,7 @@ public class Panic {
 
     @PrePersist
     protected void onCreate() {
-        this.timestamp = System.currentTimeMillis();
+        this.timestamp = LocalDateTime.now();
     }
 
 }
