@@ -12,6 +12,7 @@ import com.legendss.backend.entities.User;
 import com.legendss.backend.repositories.FakePanicRepository;
 
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class WheelchairService {
@@ -94,7 +95,13 @@ public class WheelchairService {
         return wheelchairRepository.findById(id).orElse(null);
     }
 
+
     public void deleteWheelchair(Long id) {
         this.wheelchairRepository.deleteById(id);
     }
+
+    public Set<User> getAllRelatives(String email) {
+        return userRepository.findRelativesByUserEmail(email);
+    }
+
 }
