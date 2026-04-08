@@ -17,8 +17,14 @@ const TopNav = ({ navigation, currentRoute }) => {
     const openSignup = useUIStore((state) => state.openSignup);
     const isLoggedIn = !!authUser;
 
+    const logout = useAuthStore((state) => state.logout);
     const isHome = currentRoute === 'Home';
     const homeAnim = useRef(new Animated.Value(0)).current;
+
+    const handleLogout = async () => {
+        await logout();
+        navigation.navigate('Home');
+    };
 
     return (
         <>
@@ -61,6 +67,17 @@ const TopNav = ({ navigation, currentRoute }) => {
                             <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>Sign Up</Text>
                         </TouchableOpacity>
                     </View>
+                )}
+                {isLoggedIn && (
+                    <View style={{ alignItems: 'center', gap: 4, marginRight: 20, marginBottom: 7 }}>
+                        <TouchableOpacity onPress={handleLogout} activeOpacity={0.8} style={{
+                            paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#ef4444',
+                            borderRadius: 15, borderWidth: 2, borderColor: '#ef4444',
+                        }}>
+                            <Text style={{ fontSize: 14, fontWeight: '600', color: '#fff' }}>Log Out</Text>
+                        </TouchableOpacity>
+                    </View>
+
                 )}
 
             </View>

@@ -1,7 +1,8 @@
 import { Text, View, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { MaterialIcons, Feather, Ionicons } from '@expo/vector-icons';
 import { getAllWheelChair } from '../services/wheelChair.js';
-import { GetAllRelatives, GetAllCaretakers } from '../services/userRelationship.js';
+import {  GetAllCaretakers } from '../services/userRelationship.js';
+import { GetAllRelatives } from '../services/wheelChair.js';
 import { useState, useEffect } from 'react';
 import useUserStore from '../../store/UserStore';
 
@@ -39,12 +40,14 @@ export default function Monitoring() {
     };
 
     useEffect(() => {
-        fetchWheelchairs();
-        if (user?.role === 'USER') {
+        if (user?.role === 'RELATIVE') {
+            fetchWheelchairs();
+        } 
+        else if (user?.role === 'USER') {
             handleAllCaretakers();
             handleAllRelatives();
         }
-    }, []);
+    }, [user?.role]);
 
     const isRelativeOrCaretaker = user?.role === 'RELATIVE' || user?.role === 'CARETAKER';
 

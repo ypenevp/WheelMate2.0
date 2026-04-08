@@ -195,3 +195,27 @@ export async function AddRelative(email){
     }
 }
 
+export async function GetAllRelatives(){
+    try {
+        const token = await AsyncStorage.getItem("access");
+
+        const response = await fetch(`${API_URL}/api/v2/wheelchair/getallrel`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        });
+
+        if (response.ok){
+            const data = await response.json();
+            return data;
+        } else {
+            throw new Error("Failed to fetch relatives");
+        }
+    } catch (error) {
+        console.error("Error fetching relatives data:", error);
+        throw error;
+    }
+}
+
