@@ -1,0 +1,348 @@
+import React, { useState, useEffect } from 'react';
+import {
+    Modal,
+    View,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    ScrollView,
+    Pressable,
+    ActivityIndicator,
+    Alert
+} from 'react-native';
+import { Ionicons, Feather, MaterialIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import useUserStore from '../../store/UserStore.js';
+import { EditUserDetails } from '../services/userDetails.js';
+import { GetUserProfileDetails } from '../services/userDetails.js';
+
+const SectionLabel = ({ icon, label }) => (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 20, marginBottom: 8 }}>
+        {icon}
+        <Text style={{ fontSize: 11, fontWeight: '700', color: '#9ca3af', letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            {label}
+        </Text>
+    </View>
+);
+
+const Field = ({ label, value, onChangeText, style }) => (
+    <View style={[{ flex: 1 }, style]}>
+        {label && (
+            <Text style={{ fontSize: 12, fontWeight: '500', color: '#9ca3af', marginBottom: 4 }}>
+                {label}
+            </Text>
+        )}
+        <TextInput
+            value={value}
+            onChangeText={onChangeText}
+            style={{
+                backgroundColor: '#f4f5f7',
+                borderRadius: 10,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                fontSize: 15,
+                color: '#1f2937',
+                borderWidth: 1,
+                borderColor: '#e5e7eb',
+            }}
+        />
+    </View>
+);
+
+export default function PersonalInfoModal({ visible, onClose }) {
+    const userDetails = useUserStore((state) => state.user);
+    const refreshUser = useUserStore((state) => state.fetchUser);
+
+    const [profileImage, setProfileImage] = useState(null);
+    const [address, setAddress] = useState('');
+    const [telephone, setTelephone] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            if (!userDetails?.id || !visible) return;
+
+            try {
+                const profileDetails = await GetUserProfileDetails(userDetails.id);
+                
+                setAddress(profileDetails?.address || '');
+                setTelephone(profileDetails?.telephone || '');
+                setProfileImage(profileDetails?.photoUrl || profileDetails?.photo || null);
+            } catch (error) {
+                console.error("Error fetching profile details:", error);
+                
+                if (userDetails) {
+                    setAddress(userDetails.address || '');
+                    setTelephone(userDetails.telephone || '');
+                    setProfileImage(userDetails.photo || null);
+                }
+            }
+        };
+
+        fetchProfile();
+    }, [userDetails, visible]);
+
+    const pickImage = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (status !== 'granted') {
+            Alert.alert('Sorry, we need camera roll permissions!');
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            setProfileImage(result.assets[0].uri);
+        }
+    };
+
+    const handleSave = async () => {
+        if (!userDetails?.id) {
+            Alert.alert("Error", "User ID is missing.");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            console.log("Saving profile with:", userDetails.id);
+            await EditUserDetails(userDetails.id, address, telephone, profileImage);
+            
+            Alert.alert("Success", "Profile updated successfully!");
+            
+            if (refreshUser) await refreshUser();
+            
+            onClose();
+        } catch (error) {
+            Alert.alert("Error", "Failed to update profile.");
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+            <Pressable
+                onPress={onClose}
+                style={{
+                    flex: 1,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    paddingHorizontal: 20,
+                }}
+            >
+                <Pressable
+                    onPress={(e) => e.stopPropagation()}
+                    style={{
+                        width: '100%',
+                        maxWidth: 460,
+                        backgroundColor: '#fff',
+                        borderRadius: 20,
+                        overflow: 'hidden',
+                    }}
+                >
+                    <View
+                        style={{
+                            backgroundColor: '#1e293b',
+                            paddingHorizontal: 20,
+                            paddingVertical: 18,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 14,
+                        }}
+                    >
+                        <View
+                            style={{
+                                width: 44,
+                                height: 44,
+                                borderRadius: 14,
+                                backgroundColor: '#334155',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Feather name="user" size={22} color="#94a3b8" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={{ fontSize: 18, fontWeight: '600', color: '#fff' }}>
+                                Personal Information
+                            </Text>
+                            <Text style={{ fontSize: 13, color: '#94a3b8', marginTop: 2 }}>
+                                Manage your profile details
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            onPress={onClose}
+                            style={{
+                                width: 32,
+                                height: 32,
+                                borderRadius: 8,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Ionicons name="close" size={20} color="#94a3b8" />
+                        </TouchableOpacity>
+                    </View>
+
+                    <ScrollView
+                        style={{ maxHeight: 480 }}
+                        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 }}
+                    >
+                        {/* Avatar Row */}
+                        <View
+                            style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                marginBottom: 4,
+                            }}
+                        >
+                            <View
+                                style={{
+                                    width: 52,
+                                    height: 52,
+                                    borderRadius: 26,
+                                    backgroundColor: '#7c3aed',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <Text style={{ fontSize: 18, fontWeight: '700', color: '#fff' }}>
+                                    {userDetails?.username ? userDetails.username.charAt(0).toUpperCase() : 'U'}
+                                </Text>
+                            </View>
+                            <View style={{ flex: 1, marginLeft: 12 }}>
+                                <Text style={{ fontSize: 16, fontWeight: '600', color: '#1f2937' }}>
+                                    {userDetails?.username || 'Username'}
+                                </Text>
+                                <Text style={{ fontSize: 13, color: '#9ca3af', marginTop: 1 }}>
+                                    {userDetails?.email || 'email@example.com'}
+                                </Text>
+                            </View>
+                            <TouchableOpacity onPress={pickImage}>
+                                <Text style={{ fontSize: 14, fontWeight: '600', color: '#3b82f6' }}>
+                                    Change photo
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <SectionLabel
+                            icon={<MaterialIcons name="mail-outline" size={16} color="#9ca3af" />}
+                            label="Email Address"
+                        />
+                        <View>
+                            <TextInput
+                                editable={false}
+                                value={userDetails?.email || ''}
+                                style={{
+                                    backgroundColor: '#e5e7eb',
+                                    borderRadius: 10,
+                                    paddingHorizontal: 14,
+                                    paddingVertical: 12,
+                                    fontSize: 15,
+                                    color: '#6b7280',
+                                    borderWidth: 1,
+                                    borderColor: '#d1d5db',
+                                    paddingRight: 80,
+                                }}
+                            />
+                            <View
+                                style={{
+                                    position: 'absolute',
+                                    right: 12,
+                                    top: '50%',
+                                    transform: [{ translateY: -11 }],
+                                    backgroundColor: '#ecfdf5',
+                                    paddingHorizontal: 8,
+                                    paddingVertical: 3,
+                                    borderRadius: 999,
+                                }}
+                            >
+                                <Text style={{ fontSize: 11, fontWeight: '600', color: '#059669' }}>Verified</Text>
+                            </View>
+                        </View>
+
+                        <SectionLabel
+                            icon={<Feather name="phone" size={16} color="#9ca3af" />}
+                            label="Phone Number"
+                        />
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                            <View
+                                style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    backgroundColor: '#f4f5f7',
+                                    borderRadius: 10,
+                                    paddingHorizontal: 12,
+                                    borderWidth: 1,
+                                    borderColor: '#e5e7eb',
+                                }}
+                            >
+                                <Text style={{ fontSize: 13, color: '#6b7280' }}>🇧🇬 +359</Text>
+                            </View>
+                            <Field
+                                value={telephone}
+                                onChangeText={setTelephone}
+                                style={{ flex: 1 }}
+                            />
+                        </View>
+
+                        <SectionLabel
+                            icon={<Ionicons name="location-outline" size={16} color="#9ca3af" />}
+                            label="Address"
+                        />
+                        <Field
+                            value={address}
+                            onChangeText={setAddress}
+                            style={{ marginBottom: 10 }}
+                        />
+                    </ScrollView>
+
+                    <View
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            paddingHorizontal: 20,
+                            paddingVertical: 16,
+                            borderTopWidth: 1,
+                            borderTopColor: '#f3f4f6',
+                        }}
+                    >
+                        <TouchableOpacity onPress={onClose} disabled={loading}>
+                            <Text style={{ fontSize: 15, fontWeight: '600', color: loading ? '#9ca3af' : '#1f2937' }}>Cancel</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity
+                            onPress={handleSave}
+                            disabled={loading}
+                            style={{
+                                backgroundColor: loading ? '#93c5fd' : '#3b82f6',
+                                paddingHorizontal: 24,
+                                paddingVertical: 12,
+                                borderRadius: 999,
+                                flexDirection: 'row',
+                                alignItems: 'center'
+                            }}
+                        >
+                            {loading ? (
+                                <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                            ) : null}
+                            <Text style={{ fontSize: 15, fontWeight: '600', color: '#fff' }}>
+                                {loading ? 'Saving...' : 'Save changes'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </Pressable>
+            </Pressable>
+        </Modal>
+    );
+}
