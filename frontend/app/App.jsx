@@ -9,6 +9,8 @@ import Map from './pages/Map.jsx';
 import Settings from './pages/Settings.jsx';
 import Monitoring from './pages/Monitoring.jsx';
 import RelativesCareTakers from './pages/RelativesCareTakers.jsx';
+import Panic from './pages/Panic.jsx';
+import MyWheelChair from './pages/MyWheelChair.jsx';
 
 import TopNav from './components/topNav.jsx';
 import BottomNav from './components/bottomNav.jsx';
@@ -62,9 +64,11 @@ function RootLayout() {
                 <Stack.Navigator screenOptions={{ headerShown: false, detachInactiveScreens: false }}>
                     <Stack.Screen name="Home" component={Home} />
                     <Stack.Screen name="Map" component={Map} />
-                    <Stack.Screen name="Settings" component={Settings} />
+                    <Stack.Screen name="Panic" component={Panic} />
                     <Stack.Screen name="Monitoring" component={Monitoring} />
                     <Stack.Screen name="RelativesCareTakers" component={RelativesCareTakers} />
+                    <Stack.Screen name="Settings" component={Settings} />
+                    <Stack.Screen name="MyWheelChair" component={MyWheelChair} />
                 </Stack.Navigator>
             </View>
 

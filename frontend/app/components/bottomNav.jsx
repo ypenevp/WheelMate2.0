@@ -1,20 +1,31 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { Fontisto, MaterialCommunityIcons } from '@expo/vector-icons';
-
-const TABS = [
-    { name: 'Home', route: 'Home', icon: 'home', lib: 'fontisto' },
-    { name: 'Monitoring', route: 'Monitoring', icon: 'monitor-dashboard', lib: 'material' },
-    { name: 'Nav', route: 'Map', icon: 'map-marker-alt', lib: 'fontisto' },
-    { name: 'Settings', route: 'Settings', icon: 'spinner-cog', lib: 'fontisto' },
-];
+import useUserStore from '../../store/UserStore.js';
 
 const BLUE = '#2563eb';
 const INACTIVE = '#94a3b8';
 const BAR_HEIGHT = 70;
 
 export default function BottomNav({ navigation, currentRoute }) {
-    const anims = useRef(TABS.map(() => new Animated.Value(0))).current;
+
+     const userRole = useUserStore((state) => state.user?.role?.toUpperCase());
+
+    const TABS = [
+        { name: 'Monitoring', route: 'Monitoring', icon: 'monitor-dashboard', lib: 'material' },
+        { name: 'Nav', route: 'Map', icon: 'map-marker-alt', lib: 'fontisto' },
+        userRole === 'RELATIVE' && { name: 'Panic', route: 'Panic', icon: 'alert-circle', lib: 'material' },
+        userRole === 'USER' && { name: 'MyWheelChair', route: 'MyWheelChair', icon: 'wheelchair', lib: 'material' },
+        { name: 'Settings', route: 'Settings', icon: 'cog', lib: 'fontisto' },
+    ].filter(Boolean);
+
+    const animsRef = useRef(TABS.map(() => new Animated.Value(0)));
+
+    if (animsRef.current.length !== TABS.length) {
+        animsRef.current = TABS.map(() => new Animated.Value(0));
+    }
+
+    const anims = animsRef.current;
 
     useEffect(() => {
         TABS.forEach((tab, i) => {

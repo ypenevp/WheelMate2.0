@@ -8,6 +8,21 @@ export default function Home() {
     const navigation = useNavigation();
     const user = useUserStore((state) => state.user);
 
+    const handlepostWheelChair = async (name) => {
+        try {
+            await postWheelChair(name);
+            alert('Wheelchair added successfully!');
+        } catch (error) {
+            const errorMessage = JSON.parse(error.message);
+
+            if (errorMessage.status === 400) {
+                alert('You already have a wheelchair registered.');
+            } else {
+                alert(errorMessage.message || 'An error occurred while adding the wheelchair.');
+            }
+        }
+    };
+
     return (
         <ScrollView
             style={{ flex: 1, backgroundColor: '#f9fafb' }}
@@ -38,7 +53,7 @@ export default function Home() {
                     { user?.role === "USER" && (
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            onPress={postWheelChair}
+                            onPress={ () => handlepostWheelChair(`${user.username}'s Wheelchair`)}
                             style={{ flex: 1, backgroundColor: '#fff', borderRadius: 14, paddingVertical: 13, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}
                         >
                             <Text style={{ fontSize: 14, fontWeight: '700', color: '#1e40af' }}>+ Add Wheelchair</Text>
