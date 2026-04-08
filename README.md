@@ -69,6 +69,40 @@ Base URL: `http://localhost:7070/api`
 
 ---
 
+### Wheelchair
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST`   | `/wheelchair/add` | Add a wheelchair with GPS coordinates and speed. |
+| `GET`    | `/wheelchair/my/{id}` | Get a single wheelchair by ID. |
+| `PATCH`  | `/wheelchair/update/{id}` | Update wheelchair parameters. |
+| `DELETE` | `/wheelchair/delete/{id}` | Delete a wheelchair by ID. |
+
+---
+
+### Panic and fake panic
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/panic/get/{id}` | Return a panic by id. |
+| `GET` | `/panic/get/all` | Return all panics |
+| `GET` | `/panic/wheelchair/{wheelchairId}` | Get wheelchair by id. |
+| `GET` | `/fakepanic/get{id}` | Return a panic by id. |
+| `GET` | `/fakepanic/get/wheelchair/{wheelchairId}` | Get wheelchair by id. |
+
+---
+
+### Users functionalities
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST`   | `/wheelchair/add-relative` | Add relative to user. |
+| `GET` | `/panic/relative/my-tracked` | Return all users, which the relative has. |
+| `GET` | `/fakepanic/relative/my-tracked` | Return all users, which the relative has. |
+| `GET` | `/wheelchair/getallrel` | Get all wheelchairs. |
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
