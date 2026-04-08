@@ -7,12 +7,16 @@ import com.legendss.backend.entities.User;
 import com.legendss.backend.entities.Wheelchair;
 import com.legendss.backend.exception.ResourceNotFoundException;
 import com.legendss.backend.repositories.UserRepository;
+import com.legendss.backend.services.AuthService;
 import com.legendss.backend.services.WheelchairService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @CrossOrigin(origins = "*")
@@ -137,4 +141,11 @@ public class WheelchairController {
     public Wheelchair updateWheelchair(@PathVariable Long id, @RequestBody Wheelchair wheelchair) {
         return wheelchairService.updateWheelchair(id, wheelchair);
     }
+
+    @GetMapping("/getallrel")
+    public ResponseEntity<Set<User>> getAllRelatives(@RequestAttribute("email") String email) {
+        Set<User> relatives = this.wheelchairService.getAllRelatives(email);
+        return ResponseEntity.ok(relatives);
+    }
+
 }
