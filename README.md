@@ -57,18 +57,6 @@ Base URL: `http://localhost:7070/api`
 
 ---
 
-### Authentication
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/auth/register?role=` | Register user with email, username, phone and password(?role=USER/RELATIVE/ORGANIZATION). |
-| `POST` | `/auth/verify` | Verify user with a code sent to their email. |
-| `POST` | `/auth/login` | Login a verified user with email and password. |
-| `GET`  | `/auth/get` | Get the currently authenticated user. |
-| `GET`  | `/auth/getall` | Get all authenticated users from DB. |
-
----
-
 ### Wheelchair
 
 | Method | Endpoint | Description |
@@ -97,9 +85,21 @@ Base URL: `http://localhost:7070/api`
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST`   | `/wheelchair/add-relative` | Add relative to user. |
-| `GET` | `/panic/relative/my-tracked` | Return all users, which the relative has. |
-| `GET` | `/fakepanic/relative/my-tracked` | Return all users, which the relative has. |
-| `GET` | `/wheelchair/getallrel` | Get all wheelchairs. |
+| `GET` | `/panic/relative/my-tracked` | Return panic logs for all users, which the relative has. |
+| `GET` | `/fakepanic/relative/my-tracked` | Return fake panics logs for all users, which the relative has. |
+| `GET` | `/wheelchair/getallrel` | Get all relatives for one wheelchair . |
+
+---
+
+### Authentication
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/auth/register?role=` | Register user with email, username, phone and password(?role=USER/RELATIVE/ORGANIZATION). |
+| `POST` | `/auth/verify` | Verify user with a code sent to their email. |
+| `POST` | `/auth/login` | Login a verified user with email and password. |
+| `GET`  | `/auth/get` | Get the currently authenticated user. |
+| `GET`  | `/auth/getall` | Get all authenticated users from DB. |
 
 ---
 
