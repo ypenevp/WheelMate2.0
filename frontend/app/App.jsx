@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import Home from './pages/Home.jsx';
 import Map from './pages/Map.jsx';
-import Settings from './pages/Settings.jsx';
+// import Settings from './pages/Settings.jsx';
 import Monitoring from './pages/Monitoring.jsx';
 import RelativesCareTakers from './pages/RelativesCareTakers.jsx';
 import Panic from './pages/Panic.jsx';
@@ -67,7 +67,7 @@ function RootLayout() {
                     <Stack.Screen name="Panic" component={Panic} />
                     <Stack.Screen name="Monitoring" component={Monitoring} />
                     <Stack.Screen name="RelativesCareTakers" component={RelativesCareTakers} />
-                    <Stack.Screen name="Settings" component={Settings} />
+                    {/* <Stack.Screen name="Settings" component={Settings} /> */}
                     <Stack.Screen name="MyWheelChair" component={MyWheelChair} />
                 </Stack.Navigator>
             </View>
