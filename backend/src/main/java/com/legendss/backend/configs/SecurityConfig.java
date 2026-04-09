@@ -42,10 +42,14 @@ public class SecurityConfig {
                         //panic & fakepanic logs
                         .requestMatchers("/api/v2/panic/relative/my-tracked").hasRole("RELATIVE")
                         .requestMatchers("/api/v2/fakepanic/relative/my-tracked").hasRole("RELATIVE")
-//                      .requestMatchers("/api/v2/fakepanic/**").permitAll()
+//                       .requestMatchers("/api/v2/fakepanic/**").permitAll()
+
+                                .requestMatchers("/api/v2/navigation/**").permitAll()
 
                         .requestMatchers("/api/v2/wheelchair/update/{id}").permitAll()
                         .anyRequest().authenticated()
+
+
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
