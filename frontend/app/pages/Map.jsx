@@ -145,11 +145,11 @@ export default function MapPage() {
 
   const sendNavigationUpdate = async (dir, dist) => {
     try {
-      await fetch(`${API_URL}/api/navigation/update/1`, {
+      await fetch(`${API_URL}/api/v2/navigation/update/1`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          position: dir,
+          direction: dir,
           distance: dist
         })
       });
