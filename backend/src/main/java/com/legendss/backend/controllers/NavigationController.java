@@ -19,13 +19,9 @@ public class NavigationController {
         return this.navigationService.getNavigation(id);
     }
 
-    @PostMapping("/add")
-    public Navigation addNavigationController(@RequestBody Navigation navigation) {
-        return this.navigationService.addNavigation(navigation);
-    }
-
     @PatchMapping("/update/{id}")
     public Navigation updateNavigationController(@PathVariable Long id, @RequestBody Navigation navigation) {
         return this.navigationService.updateNavigation(id, navigation);
     }
+
 }
