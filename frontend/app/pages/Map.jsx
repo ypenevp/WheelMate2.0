@@ -6,11 +6,11 @@ import {
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 import "../global.css";
-import { API_URL } from "@env";
+import { API_URL, EXPO_PUBLIC_ORS_API_KEY } from "@env";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const ORS_API_KEY = process.env.EXPO_PUBLIC_ORS_API_KEY;
-const BACKEND_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.100:8080';
+const ORS_API_KEY = EXPO_PUBLIC_ORS_API_KEY;
+const BACKEND_URL = API_URL || 'http://192.168.1.100:8080';
 
 const BLE_DIR = {
   0: 'LEFT', 1: 'RIGHT', 2: 'LEFT', 3: 'RIGHT',
