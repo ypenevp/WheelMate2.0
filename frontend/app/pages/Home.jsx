@@ -81,7 +81,7 @@ export default function Home() {
                 {[
                     { icon: 'tablet-landscape', lib: 'ionicons', color: '#3b82f6', bg: '#dbeafe', title: 'Monitoring', desc: 'Live wheelchair data, speed, status and location.', route: 'Monitoring' },
                     { icon: 'location', lib: 'ionicons', color: '#22c55e', bg: '#dcfce7', title: 'Map & Navigation', desc: 'Real-time GPS tracking and accessible routing.', route: 'Map' },
-                    { icon: 'people', lib: 'ionicons', color: '#8b5cf6', bg: '#ede9fe', title: 'Relatives & Caretakers', desc: 'Manage your connections and emergency contacts.', route: 'RelativesCareTakers' },
+                    { icon: 'people', lib: 'ionicons', color: '#8b5cf6', bg: '#ede9fe', title: 'Add Relatives', desc: 'Manage your connections and emergency contacts.', route: 'RelativesCareTakers' },
                 ].map((item, i) => (
                     <TouchableOpacity
                         key={i}

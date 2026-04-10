@@ -22,7 +22,6 @@ export const postWheelChair = async (wheelchairName) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("POST error:", errorText);
             throw new Error(errorText);
         }
         alert("Wheelchair added successfully!");
@@ -33,7 +32,6 @@ export const postWheelChair = async (wheelchairName) => {
         return data;
 
     } catch (error) {
-        console.error("POST wheelchair error:", error);
         throw error;
     }
 };
@@ -61,11 +59,9 @@ export const getWheelChair = async () => {
             return data;
         } else {
             const errorText = await response.text();
-            console.error("GET error:", errorText);
             throw new Error(errorText);
         }
     } catch (error) {
-        console.error("GET wheelchair error:", error);
         throw error;
     }
 };

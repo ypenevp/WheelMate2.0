@@ -16,7 +16,6 @@ export default function BottomNav({ navigation, currentRoute }) {
         { name: 'Nav', route: 'Map', icon: 'map-marker-alt', lib: 'fontisto' },
         userRole === 'RELATIVE' && { name: 'Panic', route: 'Panic', icon: 'alert-circle', lib: 'material' },
         userRole === 'USER' && { name: 'MyWheelChair', route: 'MyWheelChair', icon: 'wheelchair', lib: 'material' },
-        { name: 'Settings', route: 'Settings', icon: 'cog', lib: 'fontisto' },
     ].filter(Boolean);
 
     const animsRef = useRef(TABS.map(() => new Animated.Value(0)));

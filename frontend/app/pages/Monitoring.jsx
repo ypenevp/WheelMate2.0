@@ -1,7 +1,6 @@
 import { Text, View, ScrollView, TouchableOpacity, Linking } from 'react-native';
 import { MaterialIcons, Feather, Ionicons } from '@expo/vector-icons';
 import { getAllWheelChair } from '../services/wheelChair.js';
-import {  GetAllCaretakers } from '../services/userRelationship.js';
 import { GetAllRelatives } from '../services/wheelChair.js';
 import { useState, useEffect } from 'react';
 import useUserStore from '../../store/UserStore';
@@ -30,26 +29,16 @@ export default function Monitoring() {
         }
     };
 
-    const handleAllCaretakers = async () => {
-        try {
-            const caretakers = await GetAllCaretakers();
-            setCaretakersData(caretakers);
-        } catch (error) {
-            console.error('Error fetching caretakers:', error);
-        }
-    };
-
     useEffect(() => {
         if (user?.role === 'RELATIVE') {
             fetchWheelchairs();
-        } 
+        }
         else if (user?.role === 'USER') {
-            handleAllCaretakers();
             handleAllRelatives();
         }
     }, [user?.role]);
 
-    const isRelativeOrCaretaker = user?.role === 'RELATIVE' || user?.role === 'CARETAKER';
+    const isRelative = user?.role === 'RELATIVE';
 
     return (
         <ScrollView
@@ -62,11 +51,11 @@ export default function Monitoring() {
                     Monitoring
                 </Text>
                 <Text style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>
-                    {isRelativeOrCaretaker ? 'Wheelchair fleet overview' : 'Your relatives & caretakers'}
+                    {isRelative ? 'Wheelchair fleet overview' : 'Your relatives'}
                 </Text>
             </View>
 
-            {isRelativeOrCaretaker ? (
+            {isRelative ? (
                 <View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
                         <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#dbeafe', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
@@ -123,20 +112,13 @@ export default function Monitoring() {
                                         )}
                                     </View>
                                     <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: wheelchair.panicStatus ? '#fef2f2' : '#f0fdf4', borderWidth: 1, borderColor: wheelchair.panicStatus ? '#fecaca' : '#bbf7d0' }}>
-                                        <Text style={{ fontSize: 11, fontWeight: '700', color: wheelchair.panicStatus ? '#ef4444' : '#16a34a' }}>
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: wheelchair.panicStatus ? '#ef4444' : '#16a34a' }}>
                                             {wheelchair.panicStatus ? 'PANIC' : 'SAFE'}
                                         </Text>
                                     </View>
                                 </View>
 
                                 <View style={{ flexDirection: 'row', gap: 10 }}>
-                                    <View style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
-                                        <Feather name="activity" size={14} color="#3b82f6" style={{ marginBottom: 4 }} />
-                                        <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>
-                                            {wheelchair.speed ?? '—'} km/h
-                                        </Text>
-                                        <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Speed</Text>
-                                    </View>
 
                                     <View style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
                                         <Ionicons name="person" size={14} color="#8b5cf6" style={{ marginBottom: 4 }} />
@@ -146,11 +128,14 @@ export default function Monitoring() {
                                         <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>In Chair</Text>
                                     </View>
 
-                                    <View style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
+                                    <TouchableOpacity
+                                        onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${wheelchair.gpsCoordinate}`)}
+                                        style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}
+                                    >
                                         <Ionicons name="location" size={14} color="#10b981" style={{ marginBottom: 4 }} />
                                         <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>Live</Text>
                                         <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>GPS</Text>
-                                    </View>
+                                    </TouchableOpacity>
                                 </View>
                             </View>
                         ))
@@ -194,42 +179,6 @@ export default function Monitoring() {
                                 </View>
                             ))}
                         </View>
-                    )}
-
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14 }}>
-                        <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#d1fae5', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                            <Feather name="user-check" size={16} color="#059669" />
-                        </View>
-                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#111827' }}>Caretakers</Text>
-                        <View style={{ marginLeft: 'auto', backgroundColor: '#d1fae5', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 }}>
-                            <Text style={{ fontSize: 12, fontWeight: '600', color: '#059669' }}>{caretakersData.length}</Text>
-                        </View>
-                    </View>
-
-                    {caretakersData.length === 0 ? (
-                        <View style={{ alignItems: 'center', paddingVertical: 36, backgroundColor: '#fff', borderRadius: 20, borderWidth: 1, borderColor: '#f3f4f6' }}>
-                            <Text style={{ fontSize: 14, color: '#d1d5db', fontWeight: '500' }}>No caretakers added yet</Text>
-                        </View>
-                    ) : (
-                        caretakersData.map((caretaker) => (
-                            <View
-                                key={caretaker.id}
-                                style={{ backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 10, flexDirection: 'row', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4, elevation: 1, borderWidth: 1, borderColor: '#f3f4f6' }}
-                            >
-                                <View style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: '#d1fae5', alignItems: 'center', justifyContent: 'center', marginRight: 14 }}>
-                                    <Text style={{ fontSize: 16, fontWeight: '700', color: '#059669' }}>
-                                        {caretaker.username?.[0]?.toUpperCase() || '?'}
-                                    </Text>
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Text style={{ fontSize: 15, fontWeight: '600', color: '#111827' }}>{caretaker.username}</Text>
-                                    <Text style={{ fontSize: 13, color: '#9ca3af', marginTop: 2 }}>{caretaker.email}</Text>
-                                </View>
-                                <View style={{ paddingHorizontal: 9, paddingVertical: 3, backgroundColor: '#d1fae5', borderRadius: 20 }}>
-                                    <Text style={{ fontSize: 11, fontWeight: '600', color: '#059669' }}>Caretaker</Text>
-                                </View>
-                            </View>
-                        ))
                     )}
                 </View>
             )}
