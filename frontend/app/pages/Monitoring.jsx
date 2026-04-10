@@ -97,12 +97,12 @@ export default function Monitoring() {
                                         <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827' }}>
                                             {wheelchair.name}
                                         </Text>
-                                        {wheelchair.gpsCoordinate ? (
+                                        {wheelchair.location ? (
                                             <TouchableOpacity
-                                                onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${wheelchair.gpsCoordinate}`)}
+                                                onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${wheelchair.location}`)}
                                             >
                                                 <Text style={{ fontSize: 12, color: '#3b82f6', marginTop: 2, textDecorationLine: 'underline' }}>
-                                                    {wheelchair.gpsCoordinate}
+                                                    {wheelchair.location}
                                                 </Text>
                                             </TouchableOpacity>
                                         ) : (
@@ -129,7 +129,7 @@ export default function Monitoring() {
                                     </View>
 
                                     <TouchableOpacity
-                                        onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${wheelchair.gpsCoordinate}`)}
+                                        onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${wheelchair.location}`)}
                                         style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}
                                     >
                                         <Ionicons name="location" size={14} color="#10b981" style={{ marginBottom: 4 }} />
