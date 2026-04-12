@@ -138,7 +138,7 @@ export default function Panic() {
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                     <Ionicons name="location-outline" size={15} color="#6b7280" />
                                     <Text style={{ fontSize: 14, fontWeight: '500', color: '#374151' }}>
-                                        {log.location ? `${log.location.latitude.toFixed(4)}, ${log.location.longitude.toFixed(4)}` : "Location not available"}
+                                        {log.location}
                                     </Text>
                                 </View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
