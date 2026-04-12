@@ -4,6 +4,15 @@ import { getAllWheelChair } from '../services/wheelChair.js';
 import { GetAllRelatives } from '../services/wheelChair.js';
 import { useState, useEffect } from 'react';
 import useUserStore from '../../store/UserStore';
+import webSocketService from '../services/websocket';
+import * as encoding from 'text-encoding';
+
+
+Object.assign(global, {
+  TextEncoder: encoding.TextEncoder,
+  TextDecoder: encoding.TextDecoder,
+});
+
 
 export default function Monitoring() {
     const [wheelchairs, setWheelchairs] = useState([]);
@@ -28,6 +37,23 @@ export default function Monitoring() {
             console.error('Error fetching relatives:', error);
         }
     };
+
+
+    useEffect(() => {
+        const subscription = webSocketService.subscribe('/topic/wheelchairs', (message) => {
+            if (message.body) {
+                const updatedWheelchair = JSON.parse(message.body);
+                setWheelchairs((prev) =>
+                    prev.map(c => c.id === updatedWheelchair.id ? updatedWheelchair : c)
+                );
+            }
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
+    }, []);
+
 
     useEffect(() => {
         if (user?.role === 'RELATIVE') {

@@ -1,7 +1,8 @@
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { GetPanics, GetFakePanics } from "../services/panic";
+import webSocketService from '../services/websocket';
 
 export default function Panic() {
     const [activeTab, setActiveTab] = useState("panic");
@@ -11,34 +12,45 @@ export default function Panic() {
     const logs = activeTab === "panic" ? panics : fakePanics;
     const isPanic = activeTab === "panic";
 
-    useEffect(() => {
-        async function fetchPanics() {
-            try {
-                const panicsData = await GetPanics();
-                console.log("Fetched panic logs:", panicsData);
-                
-                const sortedPanics = panicsData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                setPanics(sortedPanics);
-            } catch (error) {
-                console.error("Error fetching panic logs:", error);
-            }
+    const fetchPanics = async () => {
+        try {
+            const panicsData = await GetPanics();
+            const sortedPanics = panicsData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            setPanics(sortedPanics);
+        } catch (error) {
+            console.error(error);
         }
-        fetchPanics();
+    };
 
-        async function fetchFakePanics() {
-            try {
-                const fakePanicsData = await GetFakePanics();
-                console.log("Fetched fake panic logs:", fakePanicsData);
-                
-                const sortedFakePanics = fakePanicsData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-                setFakePanics(sortedFakePanics);
-            } catch (error) {
-                console.error("Error fetching fake panic logs:", error);
-            }
+    const fetchFakePanics = async () => {
+        try {
+            const fakePanicsData = await GetFakePanics();
+            const sortedFakePanics = fakePanicsData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            setFakePanics(sortedFakePanics);
+        } catch (error) {
+            console.error(error);
         }
+    };
+
+    useEffect(() => {
+        fetchPanics();
         fetchFakePanics();
     }, []);
 
+    useEffect(() => {
+        const panicSub = webSocketService.subscribe('/topic/panics', () => {
+            fetchPanics();
+        });
+
+        const fakePanicSub = webSocketService.subscribe('/topic/fakePanics', () => {
+            fetchFakePanics();
+        });
+
+        return () => {
+            panicSub.unsubscribe();
+            fakePanicSub.unsubscribe();
+        };
+    }, []);
 
     return (
         <ScrollView

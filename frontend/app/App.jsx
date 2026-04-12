@@ -3,6 +3,9 @@ import { View, Modal, TouchableOpacity, KeyboardAvoidingView, Platform } from 'r
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { useNavigation } from '@react-navigation/native';
+import webSocketService from './services/websocket';
+import {API_URL} from "@env"
+
 
 import Home from './pages/Home.jsx';
 import Map from './pages/Map.jsx';
@@ -31,6 +34,8 @@ function RootLayout() {
     const closeModal = useUIStore((state) => state.closeModal);
     const [currentRoute, setCurrentRoute] = useState('Home');
     const [screen, setScreen] = useState(null);
+
+    webSocketService.connect(`${API_URL}/ws`);
 
     useEffect(() => {
         if (modal === 'login') setScreen('login');

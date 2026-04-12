@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import com.legendss.backend.entities.FakePanic;
 import com.legendss.backend.entities.User;
 import com.legendss.backend.repositories.FakePanicRepository;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+
 
 import java.util.Optional;
 import java.util.Set;
@@ -21,13 +23,17 @@ public class WheelchairService {
     private final UserRepository userRepository;
     private final FakePanicRepository fakePanicRepository;
     private final PanicRepository panicRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+
 
     public WheelchairService(WheelchairRepository wheelchairRepository, UserRepository userRepository,
-            FakePanicRepository fakePanicRepository, PanicRepository panicRepository) {
+            FakePanicRepository fakePanicRepository, PanicRepository panicRepository, SimpMessagingTemplate messagingTemplate) {
         this.wheelchairRepository = wheelchairRepository;
         this.userRepository = userRepository;
         this.fakePanicRepository = fakePanicRepository;
         this.panicRepository = panicRepository;
+        this.messagingTemplate = messagingTemplate;
+
     }
 
     public Wheelchair addWheelchair(Wheelchair wheelchair) {
@@ -50,6 +56,10 @@ public class WheelchairService {
     }
 
     public Wheelchair updateWheelchair(Long id, Wheelchair wheelchair) {
+        boolean isPanicNow = false;
+        boolean wasPanicBefore = false;
+        boolean isFakeNow = false;
+        boolean wasFakeBefore = false;
         Wheelchair wheelchairToUpdate = this.getWheelchairById(id);
 
         if(wheelchair.getLocation() != null){
@@ -61,8 +71,8 @@ public class WheelchairService {
         }
 
         if(wheelchair.getPanic() != null) {
-            boolean wasPanicBefore = wheelchairToUpdate.getPanic() != null && wheelchairToUpdate.getPanic(); // !!!
-            boolean isPanicNow = wheelchair.getPanic();
+             wasPanicBefore = wheelchairToUpdate.getPanic() != null && wheelchairToUpdate.getPanic(); // !!!
+             isPanicNow = wheelchair.getPanic();
 
             if(isPanicNow && !wasPanicBefore){
                 Panic panic = new Panic();
@@ -75,8 +85,8 @@ public class WheelchairService {
         }
 
         if(wheelchair.getFakePanic() != null){
-            boolean wasFakeBefore = wheelchairToUpdate.getFakePanic() != null && wheelchairToUpdate.getFakePanic(); // !!!
-            boolean isFakeNow = wheelchair.getFakePanic();
+             wasFakeBefore = wheelchairToUpdate.getFakePanic() != null && wheelchairToUpdate.getFakePanic(); // !!!
+             isFakeNow = wheelchair.getFakePanic();
 
             if(isFakeNow && !wasFakeBefore){
                 FakePanic fakePanic = new FakePanic();
@@ -87,8 +97,18 @@ public class WheelchairService {
             }
             wheelchairToUpdate.setFakePanic(isFakeNow);
         }
+        Wheelchair savedWheelchair = this.wheelchairRepository.save(wheelchairToUpdate);
+        messagingTemplate.convertAndSend("/topic/wheelchairs", savedWheelchair);
 
-        return this.wheelchairRepository.save(wheelchairToUpdate);
+        if(isPanicNow && !wasPanicBefore) {
+            messagingTemplate.convertAndSend("/topic/panics", savedWheelchair); // или самия обект Panic
+        }
+        
+        if(isFakeNow && !wasFakeBefore) {
+            messagingTemplate.convertAndSend("/topic/fakePanics", savedWheelchair); // или самия обект FakePanic
+        }
+
+        return savedWheelchair;
     }
 
     public Wheelchair getWheelchairByUser(Long id) {
