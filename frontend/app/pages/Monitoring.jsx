@@ -97,12 +97,12 @@ export default function Monitoring() {
                                         <Text style={{ fontSize: 15, fontWeight: '700', color: '#111827' }}>
                                             {wheelchair.name}
                                         </Text>
-                                        {wheelchair.gpsCoordinate ? (
+                                        {wheelchair.location ? (
                                             <TouchableOpacity
-                                                onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${wheelchair.gpsCoordinate}`)}
+                                                onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${wheelchair.location}`)}
                                             >
                                                 <Text style={{ fontSize: 12, color: '#3b82f6', marginTop: 2, textDecorationLine: 'underline' }}>
-                                                    {wheelchair.gpsCoordinate}
+                                                    {wheelchair.location}
                                                 </Text>
                                             </TouchableOpacity>
                                         ) : (
@@ -111,9 +111,9 @@ export default function Monitoring() {
                                             </Text>
                                         )}
                                     </View>
-                                    <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: wheelchair.panicStatus ? '#fef2f2' : '#f0fdf4', borderWidth: 1, borderColor: wheelchair.panicStatus ? '#fecaca' : '#bbf7d0' }}>
-                                        <Text style={{ fontSize: 16, fontWeight: '700', color: wheelchair.panicStatus ? '#ef4444' : '#16a34a' }}>
-                                            {wheelchair.panicStatus ? 'PANIC' : 'SAFE'}
+                                    <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, backgroundColor: wheelchair.panic ? '#fef2f2' : '#f0fdf4', borderWidth: 1, borderColor: wheelchair.panic ? '#fecaca' : '#bbf7d0' }}>
+                                        <Text style={{ fontSize: 16, fontWeight: '700', color: wheelchair.panic ? '#ef4444' : '#16a34a' }}>
+                                            {wheelchair.panic ? 'PANIC' : 'SAFE'}
                                         </Text>
                                     </View>
                                 </View>
@@ -123,13 +123,13 @@ export default function Monitoring() {
                                     <View style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}>
                                         <Ionicons name="person" size={14} color="#8b5cf6" style={{ marginBottom: 4 }} />
                                         <Text style={{ fontSize: 14, fontWeight: '700', color: '#111827' }}>
-                                            {wheelchair.userInchair ? 'Yes' : 'No'}
+                                            {wheelchair.userInChair ? 'Yes' : 'No'}
                                         </Text>
                                         <Text style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>In Chair</Text>
                                     </View>
 
                                     <TouchableOpacity
-                                        onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${wheelchair.gpsCoordinate}`)}
+                                        onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${wheelchair.location}`)}
                                         style={{ flex: 1, backgroundColor: '#f9fafb', borderRadius: 12, padding: 12, alignItems: 'center', borderWidth: 1, borderColor: '#f3f4f6' }}
                                     >
                                         <Ionicons name="location" size={14} color="#10b981" style={{ marginBottom: 4 }} />
