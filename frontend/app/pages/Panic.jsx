@@ -16,7 +16,9 @@ export default function Panic() {
             try {
                 const panicsData = await GetPanics();
                 console.log("Fetched panic logs:", panicsData);
-                setPanics(panicsData);
+                
+                const sortedPanics = panicsData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                setPanics(sortedPanics);
             } catch (error) {
                 console.error("Error fetching panic logs:", error);
             }
@@ -27,7 +29,9 @@ export default function Panic() {
             try {
                 const fakePanicsData = await GetFakePanics();
                 console.log("Fetched fake panic logs:", fakePanicsData);
-                setFakePanics(fakePanicsData);
+                
+                const sortedFakePanics = fakePanicsData.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                setFakePanics(sortedFakePanics);
             } catch (error) {
                 console.error("Error fetching fake panic logs:", error);
             }
