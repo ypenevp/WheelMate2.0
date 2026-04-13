@@ -148,4 +148,8 @@ public class WheelchairController {
         return ResponseEntity.ok(relatives);
     }
 
+    @GetMapping("/getAllRelativesNumbers")
+    public Set<String> getAllRelativesNumbers(@RequestAttribute("email") String email) {
+        return this.wheelchairService.getRelativesNumbers(email);
+    }
 }
