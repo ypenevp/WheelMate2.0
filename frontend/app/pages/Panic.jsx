@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { GetPanics, GetFakePanics } from "../services/panic";
 import webSocketService from '../services/websocket';
+import * as Linking from 'expo-linking';
 
 export default function Panic() {
     const [activeTab, setActiveTab] = useState("panic");
