@@ -39,6 +39,7 @@ WheelMate is a modular IoT platform for smart wheelchairs. It combines an ESP32-
 - Smart mobility-aware navigation (avoids stairs, curbs, inaccessible routes).
 - On-device display (OLED) showing navigation info and real time.
 - Logs for panics.
+- Sensor indicating whether there is someone in the wheelchair.
 
 ### Extra Features
 - User authentication with email.
