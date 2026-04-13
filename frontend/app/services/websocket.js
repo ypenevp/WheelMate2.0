@@ -30,6 +30,10 @@ class WebSocketService {
                 });
                 this.pendingSubscriptions = [];
             },
+            onWebSocketClose: () => {
+                console.log('WebSocket connection closed');
+                this.isConnected = false;
+            },
             onStompError: (frame) => {
                 console.error('Broker reported error: ' + frame.headers['message']);
             }
@@ -48,7 +52,7 @@ class WebSocketService {
     }
 
     subscribe(topic, callback) {
-        if (!this.stompClient || !this.isConnected) {
+        if (!this.stompClient || !this.stompClient.connected) {
             const subObj = { topic, callback, subscriptionObj: null };
             this.pendingSubscriptions.push(subObj);
 

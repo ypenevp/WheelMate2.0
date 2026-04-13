@@ -103,7 +103,7 @@ public class WheelchairService {
         if(isPanicNow && !wasPanicBefore) {
             messagingTemplate.convertAndSend("/topic/panics", savedWheelchair); // или самия обект Panic
         }
-        
+
         if(isFakeNow && !wasFakeBefore) {
             messagingTemplate.convertAndSend("/topic/fakePanics", savedWheelchair); // или самия обект FakePanic
         }
