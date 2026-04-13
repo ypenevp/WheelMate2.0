@@ -1343,6 +1343,10 @@ unsigned long panicStartedAt = 0;
 unsigned long panicLastToggle = 0;
 bool panicOutputState = false;
 
+volatile bool navigationActive = false;
+String navDirection = "ARRIVE";
+float navDistance_m = 0.0;
+
 //////////////////////////////////////////
 // gps
 
@@ -1448,6 +1452,7 @@ bool reconnectMqtt()
     {
         Serial.println("connected to MQTT broker!");
         mqttReady = true;
+        mqttClient.subscribe("wheelmate/navigation");
         return true;
     }
 
@@ -1539,6 +1544,41 @@ void publishEvent(bool isPanic)
         Serial.println("Event published to " + topic + ": " + jsonString);
     else
         Serial.println("Failed to publish event");
+}
+
+void mqttCallback(char *topic, byte *payload, unsigned int length)
+{
+    String message;
+    for (unsigned int i = 0; i < length; i++)
+    {
+        message += (char)payload[i];
+    }
+    Serial.println("Message arrived on topic: " + String(topic));
+    Serial.println("Payload: " + message);
+
+    if (String(topic) == "wheelmate/navigation")
+    {
+        StaticJsonDocument<256> doc;
+        DeserializationError error = deserializeJson(doc, message);
+
+        if (!error)
+        {
+            String dir = doc["direction"] | "ARRIVE";
+            float dist = doc["distance"] | 0.0;
+
+            navDirection = dir;
+            navDistance_m = dist;
+
+            if (navDirection == "ARRIVE" || navDistance_m < 0)
+            {
+                navigationActive = false;
+            }
+            else
+            {
+                navigationActive = true;
+            }
+        }
+    }
 }
 
 //////////////////////////////////////////
@@ -1735,14 +1775,13 @@ void fallDetection()
 
 void showNormal()
 {
-    uint8_t h, m, s;
+    uint8_t h, m;
     bool localGpsReady;
 
     if (xSemaphoreTake(gpsMutex, pdMS_TO_TICKS(5)) == pdTRUE)
     {
         h = gpsHour;
         m = gpsMinute;
-        s = gpsSecond;
         localGpsReady = gpsReady;
         xSemaphoreGive(gpsMutex);
     }
@@ -1750,40 +1789,49 @@ void showNormal()
     {
         h = 0;
         m = 0;
-        s = 0;
         localGpsReady = false;
     }
 
     display.clearDisplay();
-
-    display.setTextSize(2);
-    display.setCursor(0, 12);
-    display.println("NORMAL");
-
-    display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
-    display.setCursor(0, 12);
 
-    char timeBuf[12];
-    snprintf(timeBuf, sizeof(timeBuf), "%02d:%02d:%02d", h, m, s);
+    char timeBuf[6];
+    snprintf(timeBuf, sizeof(timeBuf), "%02d:%02d", h, m);
+
+    display.setTextSize(3);
+
+    int16_t x1, y1;
+    uint16_t w, h_bounds;
+    display.getTextBounds(timeBuf, 0, 0, &x1, &y1, &w, &h_bounds);
+    display.setCursor((128 - w) / 2, 4);
     display.print(timeBuf);
 
-    display.setCursor(74, 12);
-    display.print("GPS:");
-    display.print(localGpsReady ? "OK" : "NO");
+    display.drawLine(0, 36, 128, 36, SSD1306_WHITE);
 
     display.setTextSize(1);
-    display.setCursor(0, 30);
-    display.printf("Ax: %.2f\n", Ax);
-    display.printf("Ay: %.2f\n", Ay);
-    display.printf("Az: %.2f\n", Az);
 
-    display.drawLine(0, 54, 128, 54, SSD1306_WHITE);
+    display.setCursor(0, 42);
+    display.print("WiFi: ");
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        display.print("ON  ");
+    }
+    else
+    {
+        display.print("OFF ");
+    }
 
-    display.setCursor(0, 56);
-    display.printf("MPU:%s ", mpuReady ? "OK" : "ERR");
-    display.printf("TOF:%s ", loxReady ? "OK" : "ERR");
-    display.printf("USR:%s", userInChair ? "1" : "0");
+    display.setCursor(64, 42);
+    display.print("GPS: ");
+    display.print(localGpsReady ? "ON" : "OFF");
+
+    display.setCursor(0, 54);
+    display.print("MPU : ");
+    display.print(mpuReady ? "ON  " : "OFF ");
+
+    display.setCursor(64, 54);
+    display.print("TOF: ");
+    display.print(loxReady ? "ON" : "OFF");
 
     display.display();
 }
@@ -1811,6 +1859,51 @@ void showPanic()
     display.drawLine(0, 54, 128, 54, SSD1306_WHITE);
     display.setCursor(0, 56);
     display.println("Press STOP");
+
+    display.display();
+}
+
+void showNavigation()
+{
+    display.clearDisplay();
+    display.setTextColor(SSD1306_WHITE);
+
+    display.setTextSize(2);
+    String distStr = String((int)navDistance_m) + " m";
+
+    int16_t x1, y1;
+    uint16_t w, h;
+    display.getTextBounds(distStr, 0, 0, &x1, &y1, &w, &h);
+    display.setCursor((128 - w) / 2, 0);
+    display.print(distStr);
+
+    int cx = 64;
+    int cy = 38;
+
+    if (navDirection == "LEFT" || navDirection == "SLIGHT_LEFT")
+    {
+        display.fillTriangle(cx - 24, cy, cx + 6, cy - 20, cx + 6, cy + 20, SSD1306_WHITE);
+        display.fillRect(cx + 6, cy - 8, 24, 16, SSD1306_WHITE);
+    }
+    else if (navDirection == "RIGHT" || navDirection == "SLIGHT_RIGHT")
+    {
+        display.fillTriangle(cx + 24, cy, cx - 6, cy - 20, cx - 6, cy + 20, SSD1306_WHITE);
+        display.fillRect(cx - 30, cy - 8, 24, 16, SSD1306_WHITE);
+    }
+    else if (navDirection == "UTURN")
+    {
+        display.fillCircle(cx, cy - 2, 16, SSD1306_WHITE);
+        display.fillCircle(cx, cy - 2, 8, SSD1306_BLACK);
+        display.fillRect(cx - 16, cy - 2, 32, 25, SSD1306_BLACK);
+        display.fillRect(cx + 8, cy - 2, 8, 16, SSD1306_WHITE);
+        display.fillRect(cx - 16, cy - 2, 8, 10, SSD1306_WHITE);
+        display.fillTriangle(cx - 12, cy + 16, cx - 22, cy + 4, cx - 2, cy + 4, SSD1306_WHITE);
+    }
+    else
+    {
+        display.fillTriangle(cx, cy - 20, cx - 20, cy + 8, cx + 20, cy + 8, SSD1306_WHITE);
+        display.fillRect(cx - 8, cy + 8, 16, 18, SSD1306_WHITE);
+    }
 
     display.display();
 }
@@ -1923,6 +2016,7 @@ void setup()
     setupWiFi();
     mqttClient.setServer(MQTT_BROKER_IP, MQTT_PORT);
     mqttClient.setBufferSize(512);
+    mqttClient.setCallback(mqttCallback);
     reconnectMqtt();
     publishTelemetry();
 }
@@ -1964,7 +2058,10 @@ void loop()
     {
         showPanic();
     }
-
+    else if (navigationActive)
+    {
+        showNavigation();
+    }
     else
     {
         showNormal();
