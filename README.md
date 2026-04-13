@@ -39,6 +39,7 @@ WheelMate is a modular IoT platform for smart wheelchairs. It combines an ESP32-
 - Smart mobility-aware navigation (avoids stairs, curbs, inaccessible routes).
 - On-device display (OLED) showing navigation info and real time.
 - Sensor indicating whether there is someone in the wheelchair.
+- Logs for panics.
 
 ### Extra Features
 - User authentication with email.
@@ -48,23 +49,27 @@ WheelMate is a modular IoT platform for smart wheelchairs. It combines an ESP32-
 ---
 ## Schematic
 
+![wheelmate shematic](https://github.com/user-attachments/assets/af9415c0-5b50-4169-97c9-8c6caff985e2)
+
 ---
+
 
 
 ## API Documentation
 
-Base URL: `http://localhost:7070/api`
+Base URL: `http://localhost:7070/api/v2`
 
 ---
 
 ### Wheelchair
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST`   | `/wheelchair/add` | Add a wheelchair with GPS coordinates and speed. |
-| `GET`    | `/wheelchair/my/{id}` | Get a single wheelchair by ID. |
-| `PATCH`  | `/wheelchair/update/{id}` | Update wheelchair parameters. |
-| `DELETE` | `/wheelchair/delete/{id}` | Delete a wheelchair by ID. |
+|----------|----------|-------------|
+| `POST`   | `/wheelchair/add` | Add a wheelchair for the authenticated user. |
+| `GET`    | `/wheelchair/my` | Get the wheelchair of the currently authenticated user. |
+| `PUT`  | `/wheelchair/update` | Update the wheelchair name of the currently authenticated user. |
+| `PATCH`  | `/wheelchair/update/{id}` | Update wheelchair parameters by wheelchair ID. |
+| `DELETE` | `/wheelchair/delete` | Delete the wheelchair of the currently authenticated user. |
 
 ---
 
@@ -75,7 +80,7 @@ Base URL: `http://localhost:7070/api`
 | `GET` | `/panic/get/{id}` | Return a panic by id. |
 | `GET` | `/panic/get/all` | Return all panics |
 | `GET` | `/panic/wheelchair/{wheelchairId}` | Get wheelchair by id. |
-| `GET` | `/fakepanic/get{id}` | Return a panic by id. |
+| `GET` | `/fakepanic/get/{id}` | Return a panic by id. |
 | `GET` | `/fakepanic/get/wheelchair/{wheelchairId}` | Get wheelchair by id. |
 
 ---
@@ -84,10 +89,11 @@ Base URL: `http://localhost:7070/api`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST`   | `/wheelchair/add-relative` | Add relative to user. |
-| `GET` | `/panic/relative/my-tracked` | Return panic logs for all users, which the relative has. |
-| `GET` | `/fakepanic/relative/my-tracked` | Return fake panics logs for all users, which the relative has. |
-| `GET` | `/wheelchair/getallrel` | Get all relatives for one wheelchair . |
+| `POST` | `/wheelchair/add-relative` | Add a relative to the authenticated user's account. |
+| `GET`  |  `/wheelchair/relative/my-tracked ` | Get all wheelchairs tracked by the authenticated RELATIVE user. |
+| `GET`  | `/panic/relative/my-tracked` | Return panic logs for all users tracked by the authenticated RELATIVE. |
+| `GET`  | `/fakepanic/relative/my-tracked` | Return fake panic logs for all users tracked by the authenticated RELATIVE. |
+| `GET`  | `/wheelchair/getallrel` | Get all relatives of the currently authenticated user. |
 
 ---
 
