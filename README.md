@@ -21,12 +21,12 @@
 **The problem:**
 - In emergency situations, users often cannot call for help quickly or reliably.
 - Wheelchair users lack smart tools for real-time navigation adapted to their mobility needs.
-- Caregivers and family members have no way to remotely monitor the user's location or safety.
+- Family members have no way to remotely monitor the user's location or safety.
 - Wheelchair users often struggle to find accessible routes suitable for their mobility needs.
 
 **Our solution:**
 
-WheelMate is a modular IoT platform for smart wheelchairs. It combines an ESP32-based hardware module with a Spring Boot backend and a mobile app to deliver real-time GPS/GSM tracking, a one-press SOS panic button, and a user-friendly on-device display. It also features an accelerometer-based SOS panic signal that can automatically detect emergencies, along with an intelligent navigation system tailored for wheelchair-accessible routes. Emergency signals are automatically dispatched to registered contacts and volunteer organizations.
+WheelMate is a modular IoT platform for smart wheelchairs. It combines an ESP32-based hardware module with a Spring Boot backend and a mobile app to deliver real-time GPS/GSM tracking, a one-press SOS panic button, and a user-friendly on-device display. It also features an accelerometer-based SOS panic signal that can automatically detect emergencies, along with an intelligent navigation system tailored for wheelchair-accessible routes. Emergency signals are automatically dispatched to registered contacts.
 
 ---
 
@@ -35,16 +35,13 @@ WheelMate is a modular IoT platform for smart wheelchairs. It combines an ESP32-
 ### Core Features
 - Real-time tracking of the wheelchair.
 - Fall/flip detection with accelerometer sensor, data triggers SOS alert.
-- SOS panic button — instantly alerts registered contacts and volunteer organizations.
+- SOS panic button — instantly alerts registered contacts.
 - Smart mobility-aware navigation (avoids stairs, curbs, inaccessible routes).
 - On-device display (OLED) showing navigation info and real time.
-- Sensor indicating whether there is someone in the wheelchair.
 - Logs for panics.
 
 ### Extra Features
 - User authentication with email.
-- Volunteer organizations system.
-- Sensor indicating whether the wheelchair is moving too fast.
 
 ---
 ## Schematic
@@ -80,7 +77,7 @@ Base URL: `http://localhost:7070/api/v2`
 | `GET` | `/panic/get/{id}` | Return a panic by id. |
 | `GET` | `/panic/get/all` | Return all panics |
 | `GET` | `/panic/wheelchair/{wheelchairId}` | Get wheelchair by id. |
-| `GET` | `/fakepanic/get/{id}` | Return a panic by id. |
+| `GET` | `/fakepanic/get/{id}` | Return a fake panic by id. |
 | `GET` | `/fakepanic/get/wheelchair/{wheelchairId}` | Get wheelchair by id. |
 
 ---
@@ -90,7 +87,7 @@ Base URL: `http://localhost:7070/api/v2`
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/wheelchair/add-relative` | Add a relative to the authenticated user's account. |
-| `GET`  |  `/wheelchair/relative/my-tracked ` | Get all wheelchairs tracked by the authenticated RELATIVE user. |
+| `GET`  |  `/wheelchair/relative/my-tracked` | Get all wheelchairs tracked by the authenticated RELATIVE user. |
 | `GET`  | `/panic/relative/my-tracked` | Return panic logs for all users tracked by the authenticated RELATIVE. |
 | `GET`  | `/fakepanic/relative/my-tracked` | Return fake panic logs for all users tracked by the authenticated RELATIVE. |
 | `GET`  | `/wheelchair/getallrel` | Get all relatives of the currently authenticated user. |
