@@ -1347,6 +1347,10 @@ volatile bool navigationActive = false;
 String navDirection = "ARRIVE";
 float navDistance_m = 0.0;
 
+#define MAX_RELATIVES 5
+String relativeNumbers[MAX_RELATIVES];
+int relativesCount = 0;
+
 //////////////////////////////////////////
 // gps
 
@@ -1443,16 +1447,24 @@ bool reconnectMqtt()
         return false;
 
     lastMqttReconnectAttempt = millis();
-
     Serial.print("Attempting MQTT connection...");
 
     String clientId = String(MQTT_CLIENT_ID) + "-" + String((uint32_t)ESP.getEfuseMac(), HEX);
 
     if (mqttClient.connect(clientId.c_str()))
+
     {
         Serial.println("connected to MQTT broker!");
         mqttReady = true;
+
         mqttClient.subscribe("wheelmate/navigation");
+
+        String configTopic = "wheelmate/config/numbers/" + String(WHEELCHAIR_DB_ID);
+        mqttClient.subscribe(configTopic.c_str());
+
+        String requestTopic = "wheelmate/request/numbers/" + String(WHEELCHAIR_DB_ID);
+        mqttClient.publish(requestTopic.c_str(), "{}");
+
         return true;
     }
 
@@ -1576,6 +1588,32 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
             else
             {
                 navigationActive = true;
+            }
+        }
+    }
+    ////////////////////////
+    if (String(topic) == "wheelmate/config/numbers/" + String(WHEELCHAIR_DB_ID))
+    {
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, payload, length);
+
+        if (error)
+        {
+            Serial.print("Failed to parse relative numbers: ");
+            Serial.println(error.c_str());
+            return;
+        }
+
+        relativesCount = 0;
+
+        JsonArray numbers = doc["numbers"].as<JsonArray>();
+        for (JsonVariant v : numbers)
+        {
+            if (relativesCount < MAX_RELATIVES)
+            {
+                relativeNumbers[relativesCount] = v.as<String>();
+                Serial.println("Loaded relative number: " + relativeNumbers[relativesCount]);
+                relativesCount++;
             }
         }
     }
@@ -1951,6 +1989,18 @@ void debugSensors()
         Serial.printf("Gyro   X: %+8.2f deg/s\n", Gx);
         Serial.printf("Gyro   Y: %+8.2f deg/s\n", Gy);
         Serial.printf("Gyro   Z: %+8.2f deg/s\n", Gz);
+        Serial.println("Relatives Numbers:");
+        if (relativesCount == 0)
+        {
+            Serial.println("No relative numbers loaded.");
+        }
+        else
+        {
+            for (int i = 0; i < relativesCount; i++)
+            {
+                Serial.printf("[%d] %s\n", i + 1, relativeNumbers[i].c_str());
+            }
+        }
         Serial.println("==================");
     }
 }
@@ -2010,7 +2060,7 @@ void setup()
     {
         Serial.printf("MPU6050 connection failed! (id=0x%02X)\n", id);
     }
-    
+
     Serial.println("Initializing VL53L0X...");
     if (!lox.begin(0x29, false, &Wire))
     {

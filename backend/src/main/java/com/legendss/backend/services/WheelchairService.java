@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.ArrayList;
 
 @Service
 public class WheelchairService {
@@ -129,10 +130,17 @@ public class WheelchairService {
 
     public Set<String> getRelativesNumbers(String email){
         Set<User> relatives = getAllRelatives(email);
-
         return relatives.stream()
                 .map(User::getPhone)
                 .collect(Collectors.toSet());
+    }
+
+    public List<String> getRelativeNumbersList(Long wheelchairId) {
+        Wheelchair wheelchair = wheelchairRepository.findById(wheelchairId)
+                .orElseThrow(() -> new ResourceNotFoundException("Wheelchair not found with ID: " + wheelchairId));
+
+        Set<String> numbersSet = getRelativesNumbers(wheelchair.getOwner().getEmail());
+        return new ArrayList<>(numbersSet);
     }
 
 }
