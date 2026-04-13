@@ -149,9 +149,14 @@ export default function Panic() {
                                 </View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                     <Ionicons name="location-outline" size={15} color="#6b7280" />
-                                    <Text style={{ fontSize: 14, fontWeight: '500', color: '#374151' }}>
-                                        {log.location}
-                                    </Text>
+                                    <TouchableOpacity
+                                        onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${log.location}`)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={{ fontSize: 12, color: '#3b82f6', marginTop: 2, textDecorationLine: 'underline' }}>
+                                            {log.location}
+                                        </Text>
+                                    </TouchableOpacity>
                                 </View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                     <Feather name="clock" size={14} color="#6b7280" />
