@@ -13,8 +13,10 @@ import com.legendss.backend.repositories.FakePanicRepository;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class WheelchairService {
@@ -27,7 +29,7 @@ public class WheelchairService {
 
 
     public WheelchairService(WheelchairRepository wheelchairRepository, UserRepository userRepository,
-            FakePanicRepository fakePanicRepository, PanicRepository panicRepository, SimpMessagingTemplate messagingTemplate) {
+                             FakePanicRepository fakePanicRepository, PanicRepository panicRepository, SimpMessagingTemplate messagingTemplate) {
         this.wheelchairRepository = wheelchairRepository;
         this.userRepository = userRepository;
         this.fakePanicRepository = fakePanicRepository;
@@ -62,19 +64,19 @@ public class WheelchairService {
         boolean wasFakeBefore = false;
         Wheelchair wheelchairToUpdate = this.getWheelchairById(id);
 
-        if(wheelchair.getLocation() != null){
+        if (wheelchair.getLocation() != null) {
             wheelchairToUpdate.setLocation(wheelchair.getLocation());
         }
 
-        if(wheelchair.getUserInChair() != null) {
+        if (wheelchair.getUserInChair() != null) {
             wheelchairToUpdate.setUserInChair(wheelchair.getUserInChair());
         }
 
-        if(wheelchair.getPanic() != null) {
-             wasPanicBefore = wheelchairToUpdate.getPanic() != null && wheelchairToUpdate.getPanic(); // !!!
-             isPanicNow = wheelchair.getPanic();
+        if (wheelchair.getPanic() != null) {
+            wasPanicBefore = wheelchairToUpdate.getPanic() != null && wheelchairToUpdate.getPanic(); // !!!
+            isPanicNow = wheelchair.getPanic();
 
-            if(isPanicNow && !wasPanicBefore){
+            if (isPanicNow && !wasPanicBefore) {
                 Panic panic = new Panic();
                 panic.setLocation(wheelchair.getLocation() != null ? wheelchair.getLocation() : wheelchairToUpdate.getLocation());
                 panic.setUserInChair(wheelchair.getUserInChair() != null ? wheelchair.getUserInChair() : wheelchairToUpdate.getUserInChair());
@@ -84,11 +86,11 @@ public class WheelchairService {
             wheelchairToUpdate.setPanic(isPanicNow);
         }
 
-        if(wheelchair.getFakePanic() != null){
-             wasFakeBefore = wheelchairToUpdate.getFakePanic() != null && wheelchairToUpdate.getFakePanic(); // !!!
-             isFakeNow = wheelchair.getFakePanic();
+        if (wheelchair.getFakePanic() != null) {
+            wasFakeBefore = wheelchairToUpdate.getFakePanic() != null && wheelchairToUpdate.getFakePanic(); // !!!
+            isFakeNow = wheelchair.getFakePanic();
 
-            if(isFakeNow && !wasFakeBefore){
+            if (isFakeNow && !wasFakeBefore) {
                 FakePanic fakePanic = new FakePanic();
                 fakePanic.setLocation(wheelchair.getLocation() != null ? wheelchair.getLocation() : wheelchairToUpdate.getLocation());
                 fakePanic.setUserInChair(wheelchair.getUserInChair() != null ? wheelchair.getUserInChair() : wheelchairToUpdate.getUserInChair());
@@ -100,11 +102,11 @@ public class WheelchairService {
         Wheelchair savedWheelchair = this.wheelchairRepository.save(wheelchairToUpdate);
         messagingTemplate.convertAndSend("/topic/wheelchairs", savedWheelchair);
 
-        if(isPanicNow && !wasPanicBefore) {
+        if (isPanicNow && !wasPanicBefore) {
             messagingTemplate.convertAndSend("/topic/panics", savedWheelchair); // или самия обект Panic
         }
 
-        if(isFakeNow && !wasFakeBefore) {
+        if (isFakeNow && !wasFakeBefore) {
             messagingTemplate.convertAndSend("/topic/fakePanics", savedWheelchair); // или самия обект FakePanic
         }
 
@@ -122,6 +124,15 @@ public class WheelchairService {
 
     public Set<User> getAllRelatives(String email) {
         return userRepository.findRelativesByUserEmail(email);
+    }
+
+
+    public Set<String> getRelativesNumbers(String email){
+        Set<User> relatives = getAllRelatives(email);
+
+        return relatives.stream()
+                .map(User::getPhone)
+                .collect(Collectors.toSet());
     }
 
 }
