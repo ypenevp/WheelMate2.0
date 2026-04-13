@@ -1604,9 +1604,23 @@ void readVL53L0X()
 
     if (lox.isRangeComplete())
     {
-        vl53l0x_raw = lox.readRange();
-        if (vl53l0x_raw > 8190)
-            Serial.println("Out of range");
+        vl53l0x_raw = (lox.readRange() - 40); // calibrate
+
+        if (vl53l0x_raw > 0 && vl53l0x_raw < 8190)
+        {
+            bool currentUserInChair = (vl53l0x_raw <= 200);
+
+            if (currentUserInChair != userInChair)
+            {
+                userInChair = currentUserInChair;
+                Serial.printf("[VL53L0X] User in chair changed to: %s (Dist: %d mm)\n", userInChair ? "YES" : "NO", vl53l0x_raw);
+            }
+        }
+        else if (vl53l0x_raw >= 8190 && userInChair)
+        {
+            userInChair = false;
+            Serial.println("[VL53L0X] Out of range -> User in chair: NO");
+        }
     }
 }
 
@@ -1975,12 +1989,17 @@ void setup()
     digitalWrite(BUZZER, LOW);
 
     Wire.begin(SDA, SCL);
+    Wire.setClock(100000);
     delay(1000);
 
-    debugI2Cscan();
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+    {
+        Serial.println("SSD1306 failed");
+    }
+    display.clearDisplay();
+    display.display();
 
     mpu.initialize();
-
     uint8_t id = mpu.getDeviceID();
     if (id == 0x34 || id == 0x38)
     {
@@ -1991,17 +2010,21 @@ void setup()
     {
         Serial.printf("MPU6050 connection failed! (id=0x%02X)\n", id);
     }
-
-    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+    
+    Serial.println("Initializing VL53L0X...");
+    if (!lox.begin(0x29, false, &Wire))
     {
-        Serial.println("SSD1306 failed");
+        Serial.println("WARNING: Failed to boot VL53L0X. Is it connected?");
+        loxReady = false;
+    }
+    else
+    {
+        Serial.println("VL53L0X ready!");
+        lox.startRangeContinuous();
+        loxReady = true;
     }
 
-    display.clearDisplay();
-    display.display();
-
     gpsSerial.begin(9600, SERIAL_8N1, GPS_RX, GPS_TX);
-
     gpsMutex = xSemaphoreCreateMutex();
 
     xTaskCreatePinnedToCore(
@@ -2704,3 +2727,4 @@ void loop()
 //         debugSensors();
 //     }
 // }
+//////////////////////////////////////////////////////
