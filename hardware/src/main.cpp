@@ -1306,6 +1306,8 @@ WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 HardwareSerial gpsSerial(2);
 TinyGPSPlus gps;
+HardwareSerial simSerial(1);
+QueueHandle_t smsQueue;
 
 SemaphoreHandle_t gpsMutex;
 volatile double lat = 0.0;
@@ -1350,6 +1352,12 @@ float navDistance_m = 0.0;
 #define MAX_RELATIVES 5
 String relativeNumbers[MAX_RELATIVES];
 int relativesCount = 0;
+
+volatile bool gsmReady = false;
+volatile bool simCardInserted = false;
+volatile int signalLevel = -1;
+volatile int simVoltage_mV = 0;
+char simOperator[32] = "No for now...";
 
 //////////////////////////////////////////
 // gps
@@ -1452,7 +1460,6 @@ bool reconnectMqtt()
     String clientId = String(MQTT_CLIENT_ID) + "-" + String((uint32_t)ESP.getEfuseMac(), HEX);
 
     if (mqttClient.connect(clientId.c_str()))
-
     {
         Serial.println("connected to MQTT broker!");
         mqttReady = true;
@@ -1591,7 +1598,7 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
             }
         }
     }
-    ////////////////////////
+
     if (String(topic) == "wheelmate/config/numbers/" + String(WHEELCHAIR_DB_ID))
     {
         JsonDocument doc;
@@ -1642,7 +1649,7 @@ void readVL53L0X()
 
     if (lox.isRangeComplete())
     {
-        vl53l0x_raw = (lox.readRange() - 40); // calibrate
+        vl53l0x_raw = (lox.readRange() - 40);
 
         if (vl53l0x_raw > 0 && vl53l0x_raw < 8190)
         {
@@ -1713,6 +1720,275 @@ void readButtons()
 }
 
 //////////////////////////////////////////
+// gsm
+
+void triggerSOS()
+{
+    if (relativesCount == 0)
+    {
+        Serial.println("[SOS] No relative numbers loaded. Cannot send SMS.");
+        return;
+    }
+
+    double localLat = 0.0;
+    double localLng = 0.0;
+    if (xSemaphoreTake(gpsMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+    {
+        localLat = lat;
+        localLng = lng;
+        xSemaphoreGive(gpsMutex);
+    }
+
+    String mapLink = "https://maps.google.com/?q=" + String(localLat, 6) + "," + String(localLng, 6);
+    String sosMessage = "SOS! Wheelchair Event! Loc: " + mapLink;
+
+    for (int i = 0; i < relativesCount; i++)
+    {
+        char msgBuffer[200];
+        snprintf(msgBuffer, sizeof(msgBuffer), "%s|%s", relativeNumbers[i].c_str(), sosMessage.c_str());
+
+        if (xQueueSend(smsQueue, &msgBuffer, pdMS_TO_TICKS(10)) == pdPASS)
+        {
+            Serial.println("[SOS] Queued SMS for: " + relativeNumbers[i]);
+        }
+        else
+        {
+            Serial.println("[SOS] SMS Queue is FULL! Dropping message.");
+        }
+    }
+}
+
+static String simReadResponse(unsigned long timeoutMs)
+{
+    String resp = "";
+    unsigned long start = millis();
+    while (millis() - start < timeoutMs)
+    {
+        while (simSerial.available())
+            resp += (char)simSerial.read();
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+    return resp;
+}
+
+static void simFlush()
+{
+    while (simSerial.available())
+        simSerial.read();
+}
+
+void simTask(void *pvParameters)
+{
+    vTaskDelay(pdMS_TO_TICKS(6000));
+
+    simSerial.begin(9600, SERIAL_8N1, SIM800_RX, SIM800_TX);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    simFlush();
+    simSerial.println("AT");
+    vTaskDelay(pdMS_TO_TICKS(300));
+
+    simFlush();
+    simSerial.println("ATE0");
+    vTaskDelay(pdMS_TO_TICKS(300));
+
+    simFlush();
+    simSerial.println("AT+CPIN?");
+    String cpinInit = simReadResponse(3000);
+    Serial.println("[GSM] CPIN init: " + cpinInit);
+
+    if (cpinInit.indexOf("SIM PIN") != -1)
+    {
+        Serial.println("[GSM] PIN required, sending 0000...");
+        simFlush();
+        simSerial.println("AT+CPIN=\"0000\"");
+        String pinResp = simReadResponse(5000);
+        Serial.println("[GSM] PIN response: " + pinResp);
+
+        if (pinResp.indexOf("OK") != -1)
+        {
+            Serial.println("[GSM] PIN accepted.");
+            vTaskDelay(pdMS_TO_TICKS(5000));
+        }
+        else
+        {
+            Serial.println("[GSM] PIN rejected or error.");
+        }
+    }
+    else if (cpinInit.indexOf("READY") != -1)
+    {
+        Serial.println("[GSM] No PIN required.");
+    }
+
+    simFlush();
+    simSerial.println("AT+CMGF=1");
+    vTaskDelay(pdMS_TO_TICKS(300));
+    simFlush();
+
+    char msgBuffer[200];
+    unsigned long lastStatusCheck = 0;
+
+    for (;;)
+    {
+        if (xQueueReceive(smsQueue, &msgBuffer, pdMS_TO_TICKS(100)) == pdPASS)
+        {
+            bool canSend = false;
+            for (int attempt = 0; attempt < 5; attempt++)
+            {
+                vTaskDelay(pdMS_TO_TICKS(200));
+                simFlush();
+                simSerial.println("AT+CREG?");
+                String cregCheck = simReadResponse(2000);
+                if (cregCheck.indexOf(",1") != -1 || cregCheck.indexOf(",5") != -1)
+                {
+                    canSend = true;
+                    break;
+                }
+                Serial.printf("[GSM] Network not ready, retry %d/5...\n", attempt + 1);
+                vTaskDelay(pdMS_TO_TICKS(3000));
+            }
+
+            if (!canSend)
+            {
+                Serial.println("[GSM] Not registered after 5 retries. SMS aborted.");
+            }
+            else
+            {
+                String fullStr = String(msgBuffer);
+                int pipeIdx = fullStr.indexOf('|');
+                if (pipeIdx != -1)
+                {
+                    String number = fullStr.substring(0, pipeIdx);
+                    String txt = fullStr.substring(pipeIdx + 1);
+
+                    simFlush();
+                    simSerial.println("AT+CMGS=\"" + number + "\"");
+
+                    bool gotPrompt = false;
+                    String promptBuf = "";
+                    unsigned long waitPrompt = millis();
+                    while (millis() - waitPrompt < 5000)
+                    {
+                        while (simSerial.available())
+                            promptBuf += (char)simSerial.read();
+
+                        if (promptBuf.indexOf('>') != -1)
+                        {
+                            gotPrompt = true;
+                            break;
+                        }
+                        vTaskDelay(pdMS_TO_TICKS(10));
+                    }
+
+                    if (gotPrompt)
+                    {
+                        simSerial.print(txt);
+                        vTaskDelay(pdMS_TO_TICKS(100));
+                        simSerial.write(26);
+
+                        String response = simReadResponse(15000);
+
+                        if (response.indexOf("OK") != -1 || response.indexOf("+CMGS:") != -1)
+                            Serial.println("[GSM] SUCCESS! SOS SMS sent.");
+                        else
+                            Serial.printf("[GSM] FAILED to send SMS to %s. Response: %s\n", number.c_str(), response.c_str());
+                    }
+                    else
+                    {
+                        Serial.printf("[GSM] FAILED: No '>' prompt for %s\n", number.c_str());
+                        simFlush();
+                        simSerial.write(0x1B);
+                    }
+                }
+            }
+        }
+
+        if (millis() - lastStatusCheck >= 15000)
+        {
+            lastStatusCheck = millis();
+
+            vTaskDelay(pdMS_TO_TICKS(200));
+            simFlush();
+            simSerial.println("AT");
+            String atResp = simReadResponse(1000);
+            gsmReady = (atResp.indexOf("OK") != -1);
+
+            if (gsmReady)
+            {
+                vTaskDelay(pdMS_TO_TICKS(200));
+                simFlush();
+                simSerial.println("AT+CPIN?");
+                String cpinResp = simReadResponse(3000);
+                if (cpinResp.indexOf("READY") != -1)
+                    simCardInserted = true;
+                else if (cpinResp.indexOf("+CME ERROR") != -1)
+                    simCardInserted = false;
+
+                vTaskDelay(pdMS_TO_TICKS(200));
+                simFlush();
+                simSerial.println("AT+CREG?");
+                String cregResp = simReadResponse(2000);
+                bool networkRegistered = (cregResp.indexOf(",1") != -1 || cregResp.indexOf(",5") != -1);
+
+                vTaskDelay(pdMS_TO_TICKS(200));
+                simFlush();
+                simSerial.println("AT+COPS?");
+                String copsResp = simReadResponse(2000);
+                int firstQuote = copsResp.indexOf('"');
+                int lastQuote = copsResp.lastIndexOf('"');
+                if (firstQuote != -1 && lastQuote != -1 && lastQuote > firstQuote)
+                {
+                    String op = copsResp.substring(firstQuote + 1, lastQuote);
+                    strncpy(simOperator, op.c_str(), sizeof(simOperator) - 1);
+                    simOperator[sizeof(simOperator) - 1] = '\0';
+                }
+                else
+                {
+                    strncpy(simOperator, networkRegistered ? "Registered" : "Searching...", sizeof(simOperator) - 1);
+                }
+
+                vTaskDelay(pdMS_TO_TICKS(200));
+                simFlush();
+                simSerial.println("AT+CBC");
+                String cbcResp = simReadResponse(1000);
+                int cbcIdx = cbcResp.indexOf("+CBC:");
+                if (cbcIdx != -1)
+                {
+                    int lastComma = cbcResp.lastIndexOf(',');
+                    if (lastComma != -1 && lastComma > cbcIdx)
+                        simVoltage_mV = cbcResp.substring(lastComma + 1).toInt();
+                }
+
+                vTaskDelay(pdMS_TO_TICKS(200));
+                simFlush();
+                simSerial.println("AT+CSQ");
+                String csqResp = simReadResponse(1000);
+                int csqIdx = csqResp.indexOf("+CSQ:");
+                if (csqIdx != -1)
+                {
+                    int commaIdx = csqResp.indexOf(',', csqIdx);
+                    if (commaIdx != -1)
+                    {
+                        String sigStr = csqResp.substring(csqIdx + 5, commaIdx);
+                        sigStr.trim();
+                        signalLevel = sigStr.toInt();
+                    }
+                }
+            }
+            else
+            {
+                simCardInserted = false;
+                signalLevel = -1;
+                simVoltage_mV = 0;
+                strncpy(simOperator, "Offline", sizeof(simOperator) - 1);
+            }
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+}
+
+//////////////////////////////////////////
 // panic
 
 void panicIndication()
@@ -1732,6 +2008,7 @@ void panicIndication()
 
         Serial.println("[PANIC] TIMEOUT -> panic confirmed, publishing event");
         publishEvent(true);
+        triggerSOS();
     }
 
     if (millis() - panicLastToggle >= PANIC_BLINK_MS)
@@ -1811,6 +2088,7 @@ void fallDetection()
 
         Serial.println("[FALL] CONFIRMED -> panic = true, publishing event");
         publishEvent(true);
+        triggerSOS();
         return;
     }
 
@@ -1864,22 +2142,15 @@ void showNormal()
 
     display.setCursor(0, 42);
     display.print("WiFi: ");
-    if (WiFi.status() == WL_CONNECTED)
-    {
-        display.print("ON  ");
-    }
-    else
-    {
-        display.print("OFF ");
-    }
+    display.print(WiFi.status() == WL_CONNECTED ? "ON  " : "OFF ");
 
     display.setCursor(64, 42);
     display.print("GPS: ");
     display.print(localGpsReady ? "ON" : "OFF");
 
     display.setCursor(0, 54);
-    display.print("MPU : ");
-    display.print(mpuReady ? "ON  " : "OFF ");
+    display.print("GSM : ");
+    display.print(gsmReady ? "ON  " : "OFF ");
 
     display.setCursor(64, 54);
     display.print("TOF: ");
@@ -1904,7 +2175,7 @@ void showPanic()
     display.setCursor(10, 40);
 
     if (panicPending)
-        display.println("VERIFY...");
+        display.println("Confirm...");
     else
         display.println("FALL DETECTED");
 
@@ -1983,6 +2254,14 @@ void debugSensors()
         Serial.printf("PanicPending: %s\n", panicPending ? "TRUE" : "FALSE");
         Serial.printf("GPS: %s | %.6f, %.6f\n", localGpsReady ? "OK" : "NO", localLat, localLng);
         Serial.printf("Vl53l0x: %.0f\n", vl53l0x_raw);
+        Serial.printf("GSM Ready: %s\n", gsmReady ? "YES" : "NO/TIMEOUT");
+        Serial.printf("SIM Card: %s\n", simCardInserted ? "INSERTED" : "MISSING");
+        if (signalLevel == 99 || signalLevel == -1 || !gsmReady)
+            Serial.printf("GSM Signal: NO SIGNAL (%d)\n", signalLevel);
+        else
+            Serial.printf("GSM Signal: %d / 31 \n", signalLevel);
+        Serial.printf("SIM Voltage: %d mV %s\n", simVoltage_mV, simVoltage_mV < 3800 ? "(LOW)" : "(OK)");
+        Serial.printf("SIM Operator: %s\n", simOperator);
         Serial.printf("Accel  X: %+6.3f g\n", Ax);
         Serial.printf("Accel  Y: %+6.3f g\n", Ay);
         Serial.printf("Accel  Z: %+6.3f g\n", Az);
@@ -1991,15 +2270,11 @@ void debugSensors()
         Serial.printf("Gyro   Z: %+8.2f deg/s\n", Gz);
         Serial.println("Relatives Numbers:");
         if (relativesCount == 0)
-        {
             Serial.println("No relative numbers loaded.");
-        }
         else
         {
             for (int i = 0; i < relativesCount; i++)
-            {
                 Serial.printf("[%d] %s\n", i + 1, relativeNumbers[i].c_str());
-            }
         }
         Serial.println("==================");
     }
@@ -2043,9 +2318,8 @@ void setup()
     delay(1000);
 
     if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
-    {
         Serial.println("SSD1306 failed");
-    }
+
     display.clearDisplay();
     display.display();
 
@@ -2064,7 +2338,7 @@ void setup()
     Serial.println("Initializing VL53L0X...");
     if (!lox.begin(0x29, false, &Wire))
     {
-        Serial.println("WARNING: Failed to boot VL53L0X. Is it connected?");
+        Serial.println("WARNING: Failed to boot VL53L0X.");
         loxReady = false;
     }
     else
@@ -2086,6 +2360,19 @@ void setup()
         NULL,
         0);
 
+    smsQueue = xQueueCreate(5, 200);
+    if (smsQueue != NULL)
+    {
+        xTaskCreatePinnedToCore(
+            simTask,
+            "simTask",
+            8192,
+            NULL,
+            1,
+            NULL,
+            0);
+    }
+
     setupWiFi();
     mqttClient.setServer(MQTT_BROKER_IP, MQTT_PORT);
     mqttClient.setBufferSize(512);
@@ -2099,14 +2386,10 @@ void loop()
     unsigned long now = millis();
 
     if (WiFi.status() != WL_CONNECTED)
-    {
         setupWiFi();
-    }
 
     if (!mqttClient.connected())
-    {
         reconnectMqtt();
-    }
 
     mqttClient.loop();
 
@@ -2128,17 +2411,11 @@ void loop()
     publishTelemetry();
 
     if (panic || panicPending)
-    {
         showPanic();
-    }
     else if (navigationActive)
-    {
         showNavigation();
-    }
     else
-    {
         showNormal();
-    }
 
     if (now - lastDebugPrint >= DEBUG_INTERVAL_MS)
     {
