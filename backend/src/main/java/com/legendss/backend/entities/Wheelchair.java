@@ -35,8 +35,8 @@ public class Wheelchair {
     @Column(name = "fakepanic")
     private Boolean fakePanic;
 
-    @Column(name = "mobility")
-    private Boolean mobility;
+    @Column(name = "immobility")
+    private Boolean immobility;
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)

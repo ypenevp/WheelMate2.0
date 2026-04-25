@@ -109,17 +109,17 @@ public class WheelchairService {
             wheelchairToUpdate.setFakePanic(isFakeNow);
         }
 
-        if (wheelchair.getMobility() != null) {
-            wasIMobilityBefore = wheelchairToUpdate.getMobility() != null && wheelchairToUpdate.getMobility();
-            isIMobilityNow = wheelchair.getMobility();
+        if (wheelchair.getImmobility() != null) {
+            wasIMobilityBefore = wheelchairToUpdate.getImmobility() != null && wheelchairToUpdate.getImmobility();
+            isIMobilityNow = wheelchair.getImmobility();
 
             if (isIMobilityNow && !wasIMobilityBefore) {
                 Mobility mobility = new Mobility();
-                mobility.setImobility(wheelchair.getMobility() != null ? wheelchair.getMobility() : wheelchairToUpdate.getMobility());
+                mobility.setImobility(wheelchair.getImmobility() != null ? wheelchair.getImmobility() : wheelchairToUpdate.getImmobility());
                 mobility.setWheelchair(wheelchairToUpdate);
                 this.mobilityRepository.save(mobility);
             }
-            wheelchairToUpdate.setMobility(isIMobilityNow);
+            wheelchairToUpdate.setImmobility(isIMobilityNow);
         }
 
         Wheelchair savedWheelchair = this.wheelchairRepository.save(wheelchairToUpdate);
@@ -131,6 +131,10 @@ public class WheelchairService {
 
         if (isFakeNow && !wasFakeBefore) {
             messagingTemplate.convertAndSend("/topic/fakePanics", savedWheelchair);
+        }
+
+        if (isIMobilityNow && !wasIMobilityBefore) {
+            messagingTemplate.convertAndSend("/topic/mobilities", savedWheelchair);
         }
 
         return savedWheelchair;

@@ -66,6 +66,7 @@ public class MqttSubscriberService {
             if (data.has("userInChair")) updatedData.setUserInChair(data.get("userInChair").asBoolean());
             if (data.has("panic")) updatedData.setPanic(data.get("panic").asBoolean());
             if (data.has("fakePanic")) updatedData.setFakePanic(data.get("fakePanic").asBoolean());
+            if (data.has("immobility")) updatedData.setImmobility(data.get("immobility").asBoolean());
 
             wheelchairService.updateWheelchair(wheelchairId, updatedData);
             System.out.println("Updated wheelchair ID [" + wheelchairId + "] with telemetry: " + payload);

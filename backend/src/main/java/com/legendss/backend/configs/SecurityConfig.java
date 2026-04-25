@@ -46,6 +46,8 @@ public class SecurityConfig {
 
                         .requestMatchers("/api/v2/navigation/**").permitAll()
 
+                        .requestMatchers("/api/v2/mobility/relative/my-tracked").hasRole("RELATIVE")
+
                         .requestMatchers("/api/v2/wheelchair/update/{id}").permitAll()
                         .requestMatchers("/ws/**").permitAll()
 

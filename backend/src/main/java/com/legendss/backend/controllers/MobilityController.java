@@ -1,10 +1,15 @@
 package com.legendss.backend.controllers;
 
 import com.legendss.backend.entities.Mobility;
+import com.legendss.backend.entities.ROLE;
+import com.legendss.backend.entities.User;
+import com.legendss.backend.exception.ResourceNotFoundException;
+import com.legendss.backend.repositories.UserRepository;
 import com.legendss.backend.services.MobilityService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -13,23 +18,31 @@ import java.util.List;
 public class MobilityController {
 
     private final MobilityService mobilityService;
+    private final UserRepository userRepository;
 
-    public MobilityController(MobilityService mobilityService) {
+    public MobilityController(MobilityService mobilityService, UserRepository userRepository) {
         this.mobilityService = mobilityService;
+        this.userRepository = userRepository;
     }
 
-    @GetMapping("get/{id}")
-    public ResponseEntity<Mobility> getMobilityController(@PathVariable Long id) {
-        return ResponseEntity.ok(this.mobilityService.getMobility(id));
-    }
+    @GetMapping("/relative/my-tracked")
+    public ResponseEntity<List<Mobility>> getTrackedMobilities(@RequestAttribute("email") String email) {
+        User relative = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
 
-    @GetMapping ("get/all")
-    public ResponseEntity<List<Mobility>> getAllMobilitiesController() {
-        return ResponseEntity.ok(this.mobilityService.getAllMobilities());
-    }
+        if (relative.getRole() != ROLE.RELATIVE) {
+            throw new SecurityException("Only users with role RELATIVE can do this.");
+        }
 
-    @GetMapping("get/wheelchair/{wheelchairId}")
-    public ResponseEntity<List<Mobility>> getByWheelchairController(@PathVariable Long wheelchairId) {
-        return ResponseEntity.ok(this.mobilityService.getMobilitiesByWheelchairId(wheelchairId));
+        List<User> trackedUsers = userRepository.findAllUsersByRelativeId(relative.getId());
+        List<Mobility> allMobilities = new ArrayList<>();
+
+        for (User u : trackedUsers) {
+            if (u.getWheelchair() != null) {
+                allMobilities.addAll(mobilityService.getMobilitiesByWheelchairId(u.getWheelchair().getId()));
+            }
+        }
+
+        return ResponseEntity.ok(allMobilities);
     }
 }

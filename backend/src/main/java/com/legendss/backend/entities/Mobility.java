@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "mobility")
@@ -31,7 +32,7 @@ public class Mobility {
 
     @PrePersist
     protected void onCreate() {
-        this.finishtime = LocalDateTime.now();
+        this.finishtime = LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS);
         this.starttime = this.finishtime.minusSeconds(10);
     }
 
