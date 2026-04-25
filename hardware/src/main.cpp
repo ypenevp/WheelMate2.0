@@ -1787,7 +1787,6 @@ void simTask(void *pvParameters)
     simFlush();
     simSerial.println("AT");
     vTaskDelay(pdMS_TO_TICKS(300));
-
     simFlush();
     simSerial.println("ATE0");
     vTaskDelay(pdMS_TO_TICKS(300));
@@ -1820,6 +1819,9 @@ void simTask(void *pvParameters)
         Serial.println("[GSM] No PIN required.");
     }
 
+    simFlush();
+    simSerial.println("AT+CMGF=1");
+    vTaskDelay(pdMS_TO_TICKS(300));
     simFlush();
     simSerial.println("AT+CMGF=1");
     vTaskDelay(pdMS_TO_TICKS(300));
@@ -1919,10 +1921,22 @@ void simTask(void *pvParameters)
                 simFlush();
                 simSerial.println("AT+CPIN?");
                 String cpinResp = simReadResponse(3000);
+
                 if (cpinResp.indexOf("READY") != -1)
+                {
                     simCardInserted = true;
-                else if (cpinResp.indexOf("+CME ERROR") != -1)
+                }
+                else if (cpinResp.indexOf("SIM PIN") != -1)
+                {
+                    simFlush();
+                    simSerial.println("AT+CPIN=\"0000\"");
+                    simReadResponse(5000);
                     simCardInserted = false;
+                }
+                else
+                {
+                    simCardInserted = false;
+                }
 
                 vTaskDelay(pdMS_TO_TICKS(200));
                 simFlush();
@@ -2169,19 +2183,29 @@ void showPanic()
     display.println("ALERT!");
 
     display.setTextSize(1);
-    display.setCursor(20, 25);
-    display.println("EMERGENCY");
+    display.setCursor(20, 18);
+    display.println(panicPending ? "Confirm..." : "FALL DETECTED");
 
-    display.setCursor(10, 40);
+    display.drawLine(0, 30, 128, 30, SSD1306_WHITE);
 
-    if (panicPending)
-        display.println("Confirm...");
+    display.setCursor(0, 33);
+
+    if (relativesCount == 0)
+    {
+        display.setTextSize(2);
+        display.setCursor(30, 38);
+        display.println("112");
+    }
     else
-        display.println("FALL DETECTED");
-
-    display.drawLine(0, 54, 128, 54, SSD1306_WHITE);
-    display.setCursor(0, 56);
-    display.println("Press STOP");
+    {
+        display.setTextSize(1);
+        int toShow = min(relativesCount, 3);
+        for (int i = 0; i < toShow; i++)
+        {
+            display.setCursor(0, 33 + i * 10);
+            display.println(relativeNumbers[i]);
+        }
+    }
 
     display.display();
 }
@@ -2409,7 +2433,7 @@ void loop()
 
     panicIndication();
     publishTelemetry();
-
+ 
     if (panic || panicPending)
         showPanic();
     else if (navigationActive)
