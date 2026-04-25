@@ -14,14 +14,13 @@ import com.legendss.backend.entities.FakePanic;
 import com.legendss.backend.entities.User;
 import com.legendss.backend.repositories.FakePanicRepository;
 
-
-
-
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.time.Duration;
 
 @Service
 public class WheelchairService {
@@ -32,17 +31,19 @@ public class WheelchairService {
     private final PanicRepository panicRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final MobilityRepository mobilityRepository;
-
+    private final SittingSessionRepository sittingSessionRepository;
 
     public WheelchairService(WheelchairRepository wheelchairRepository, UserRepository userRepository,
-                             FakePanicRepository fakePanicRepository, PanicRepository panicRepository, SimpMessagingTemplate messagingTemplate, MobilityRepository mobilityRepository) {
+            FakePanicRepository fakePanicRepository, PanicRepository panicRepository,
+            SimpMessagingTemplate messagingTemplate, MobilityRepository mobilityRepository,
+            SittingSessionRepository sittingSessionRepository) {
         this.wheelchairRepository = wheelchairRepository;
         this.userRepository = userRepository;
         this.fakePanicRepository = fakePanicRepository;
         this.panicRepository = panicRepository;
         this.messagingTemplate = messagingTemplate;
         this.mobilityRepository = mobilityRepository;
-
+        this.sittingSessionRepository = sittingSessionRepository;
     }
 
     public Wheelchair addWheelchair(Wheelchair wheelchair) {
@@ -78,7 +79,27 @@ public class WheelchairService {
         }
 
         if (wheelchair.getUserInChair() != null) {
-            wheelchairToUpdate.setUserInChair(wheelchair.getUserInChair());
+            // wheelchairToUpdate.setUserInChair(wheelchair.getUserInChair());
+            boolean wasInChairBefore = wheelchairToUpdate.getUserInChair() != null
+                    && wheelchairToUpdate.getUserInChair();
+            boolean isInChairNow = wheelchair.getUserInChair();
+
+            if (isInChairNow && !wasInChairBefore) {
+                SittingSession session = new SittingSession();
+                session.setWheelchair(wheelchairToUpdate);
+                session.setStartTime(LocalDateTime.now());
+                this.sittingSessionRepository.save(session);
+            } else if (!isInChairNow && wasInChairBefore) {
+                Optional<SittingSession> openSession = this.sittingSessionRepository
+                        .findOpenSession(wheelchairToUpdate.getId());
+                openSession.ifPresent(session -> {
+                    session.setEndTime(LocalDateTime.now());
+                    session.setDurationSeconds(
+                            Duration.between(session.getStartTime(), LocalDateTime.now()).getSeconds());
+                    this.sittingSessionRepository.save(session);
+                });
+            }
+            wheelchairToUpdate.setUserInChair(isInChairNow);
         }
 
         if (wheelchair.getPanic() != null) {
@@ -87,8 +108,10 @@ public class WheelchairService {
 
             if (isPanicNow && !wasPanicBefore) {
                 Panic panic = new Panic();
-                panic.setLocation(wheelchair.getLocation() != null ? wheelchair.getLocation() : wheelchairToUpdate.getLocation());
-                panic.setUserInChair(wheelchair.getUserInChair() != null ? wheelchair.getUserInChair() : wheelchairToUpdate.getUserInChair());
+                panic.setLocation(
+                        wheelchair.getLocation() != null ? wheelchair.getLocation() : wheelchairToUpdate.getLocation());
+                panic.setUserInChair(wheelchair.getUserInChair() != null ? wheelchair.getUserInChair()
+                        : wheelchairToUpdate.getUserInChair());
                 panic.setWheelchair(wheelchairToUpdate);
                 this.panicRepository.save(panic);
             }
@@ -101,8 +124,10 @@ public class WheelchairService {
 
             if (isFakeNow && !wasFakeBefore) {
                 FakePanic fakePanic = new FakePanic();
-                fakePanic.setLocation(wheelchair.getLocation() != null ? wheelchair.getLocation() : wheelchairToUpdate.getLocation());
-                fakePanic.setUserInChair(wheelchair.getUserInChair() != null ? wheelchair.getUserInChair() : wheelchairToUpdate.getUserInChair());
+                fakePanic.setLocation(
+                        wheelchair.getLocation() != null ? wheelchair.getLocation() : wheelchairToUpdate.getLocation());
+                fakePanic.setUserInChair(wheelchair.getUserInChair() != null ? wheelchair.getUserInChair()
+                        : wheelchairToUpdate.getUserInChair());
                 fakePanic.setWheelchair(wheelchairToUpdate);
                 this.fakePanicRepository.save(fakePanic);
             }
@@ -115,7 +140,8 @@ public class WheelchairService {
 
             if (isIMobilityNow && !wasIMobilityBefore) {
                 Mobility mobility = new Mobility();
-                mobility.setImobility(wheelchair.getImmobility() != null ? wheelchair.getImmobility() : wheelchairToUpdate.getImmobility());
+                mobility.setImobility(wheelchair.getImmobility() != null ? wheelchair.getImmobility()
+                        : wheelchairToUpdate.getImmobility());
                 mobility.setWheelchair(wheelchairToUpdate);
                 this.mobilityRepository.save(mobility);
             }
@@ -144,7 +170,6 @@ public class WheelchairService {
         return wheelchairRepository.findById(id).orElse(null);
     }
 
-
     public void deleteWheelchair(Long id) {
         this.wheelchairRepository.deleteById(id);
     }
@@ -153,8 +178,7 @@ public class WheelchairService {
         return userRepository.findRelativesByUserEmail(email);
     }
 
-
-    public Set<String> getRelativesNumbers(String email){
+    public Set<String> getRelativesNumbers(String email) {
         Set<User> relatives = getAllRelatives(email);
         return relatives.stream()
                 .map(User::getPhone)
@@ -168,5 +192,4 @@ public class WheelchairService {
         Set<String> numbersSet = getRelativesNumbers(wheelchair.getOwner().getEmail());
         return new ArrayList<>(numbersSet);
     }
-
 }
