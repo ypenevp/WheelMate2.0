@@ -58,4 +58,8 @@ public class Wheelchair {
         fakePanic = false;
     }
 
+    public Long getOwnerId() {
+        return owner != null ? owner.getId() : null;
+    }
+
 }
