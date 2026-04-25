@@ -39,6 +39,8 @@ WheelMate is a modular IoT platform for smart wheelchairs. It combines an ESP32-
 - Smart mobility-aware navigation (avoids stairs, curbs, inaccessible routes).
 - On-device display (OLED) showing navigation info and real time.
 - Logs for panics.
+- Activity logs.
+- Immobility detection
 - Sensor indicating whether there is someone in the wheelchair.
 
 ### Extra Features
@@ -99,6 +101,8 @@ Base URL: `http://localhost:7070/api/v2`
 | `GET`  | `/panic/relative/my-tracked` | Return panic logs for all users tracked by the authenticated RELATIVE. |
 | `GET`  | `/fakepanic/relative/my-tracked` | Return fake panic logs for all users tracked by the authenticated RELATIVE. |
 | `GET`  | `/wheelchair/getallrel` | Get all relatives of the currently authenticated user. |
+| `GET`  | `/mobility/relative/my-tracked` | Return immobility detection logs for all users tracked by the authenticated RELATIVE. |
+| `GET`  | `/mobility/relative/activity-logs/{userId}` | Return daily activity logs for all users tracked by the authenticated RELATIVE. |
 
 ---
 
