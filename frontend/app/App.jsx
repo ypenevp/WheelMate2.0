@@ -14,6 +14,7 @@ import Monitoring from './pages/Monitoring.jsx';
 import RelativesCareTakers from './pages/RelativesCareTakers.jsx';
 import Panic from './pages/Panic.jsx';
 import MyWheelChair from './pages/MyWheelChair.jsx';
+import ActivityLogs from './pages/ActivityLogs.jsx';
 
 import TopNav from './components/topNav.jsx';
 import BottomNav from './components/bottomNav.jsx';
@@ -74,6 +75,7 @@ function RootLayout() {
                     <Stack.Screen name="RelativesCareTakers" component={RelativesCareTakers} />
                     {/* <Stack.Screen name="Settings" component={Settings} /> */}
                     <Stack.Screen name="MyWheelChair" component={MyWheelChair} />
+                    <Stack.Screen name="ActivityLogs" component={ActivityLogs} />
                 </Stack.Navigator>
             </View>
 

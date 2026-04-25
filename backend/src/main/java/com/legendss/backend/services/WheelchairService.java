@@ -1,16 +1,20 @@
 package com.legendss.backend.services;
 
+import com.legendss.backend.entities.*;
+import com.legendss.backend.exception.ResourceNotFoundException;
+import com.legendss.backend.repositories.*;
+import org.springframework.stereotype.Service;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import com.legendss.backend.entities.Panic;
 import com.legendss.backend.entities.Wheelchair;
-import com.legendss.backend.exception.ResourceNotFoundException;
 import com.legendss.backend.repositories.PanicRepository;
 import com.legendss.backend.repositories.UserRepository;
 import com.legendss.backend.repositories.WheelchairRepository;
-import org.springframework.stereotype.Service;
 import com.legendss.backend.entities.FakePanic;
 import com.legendss.backend.entities.User;
 import com.legendss.backend.repositories.FakePanicRepository;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+
+
 
 
 import java.util.List;
@@ -27,15 +31,17 @@ public class WheelchairService {
     private final FakePanicRepository fakePanicRepository;
     private final PanicRepository panicRepository;
     private final SimpMessagingTemplate messagingTemplate;
+    private final MobilityRepository mobilityRepository;
 
 
     public WheelchairService(WheelchairRepository wheelchairRepository, UserRepository userRepository,
-                             FakePanicRepository fakePanicRepository, PanicRepository panicRepository, SimpMessagingTemplate messagingTemplate) {
+                             FakePanicRepository fakePanicRepository, PanicRepository panicRepository, SimpMessagingTemplate messagingTemplate, MobilityRepository mobilityRepository) {
         this.wheelchairRepository = wheelchairRepository;
         this.userRepository = userRepository;
         this.fakePanicRepository = fakePanicRepository;
         this.panicRepository = panicRepository;
         this.messagingTemplate = messagingTemplate;
+        this.mobilityRepository = mobilityRepository;
 
     }
 
@@ -63,6 +69,8 @@ public class WheelchairService {
         boolean wasPanicBefore = false;
         boolean isFakeNow = false;
         boolean wasFakeBefore = false;
+        boolean isIMobilityNow = false;
+        boolean wasIMobilityBefore = false;
         Wheelchair wheelchairToUpdate = this.getWheelchairById(id);
 
         if (wheelchair.getLocation() != null) {
@@ -74,7 +82,7 @@ public class WheelchairService {
         }
 
         if (wheelchair.getPanic() != null) {
-            wasPanicBefore = wheelchairToUpdate.getPanic() != null && wheelchairToUpdate.getPanic(); // !!!
+            wasPanicBefore = wheelchairToUpdate.getPanic() != null && wheelchairToUpdate.getPanic();
             isPanicNow = wheelchair.getPanic();
 
             if (isPanicNow && !wasPanicBefore) {
@@ -88,7 +96,7 @@ public class WheelchairService {
         }
 
         if (wheelchair.getFakePanic() != null) {
-            wasFakeBefore = wheelchairToUpdate.getFakePanic() != null && wheelchairToUpdate.getFakePanic(); // !!!
+            wasFakeBefore = wheelchairToUpdate.getFakePanic() != null && wheelchairToUpdate.getFakePanic();
             isFakeNow = wheelchair.getFakePanic();
 
             if (isFakeNow && !wasFakeBefore) {
@@ -100,15 +108,29 @@ public class WheelchairService {
             }
             wheelchairToUpdate.setFakePanic(isFakeNow);
         }
+
+        if (wheelchair.getMobility() != null) {
+            wasIMobilityBefore = wheelchairToUpdate.getMobility() != null && wheelchairToUpdate.getMobility();
+            isIMobilityNow = wheelchair.getMobility();
+
+            if (isIMobilityNow && !wasIMobilityBefore) {
+                Mobility mobility = new Mobility();
+                mobility.setImobility(wheelchair.getMobility() != null ? wheelchair.getMobility() : wheelchairToUpdate.getMobility());
+                mobility.setWheelchair(wheelchairToUpdate);
+                this.mobilityRepository.save(mobility);
+            }
+            wheelchairToUpdate.setMobility(isIMobilityNow);
+        }
+
         Wheelchair savedWheelchair = this.wheelchairRepository.save(wheelchairToUpdate);
         messagingTemplate.convertAndSend("/topic/wheelchairs", savedWheelchair);
 
         if (isPanicNow && !wasPanicBefore) {
-            messagingTemplate.convertAndSend("/topic/panics", savedWheelchair); // или самия обект Panic
+            messagingTemplate.convertAndSend("/topic/panics", savedWheelchair);
         }
 
         if (isFakeNow && !wasFakeBefore) {
-            messagingTemplate.convertAndSend("/topic/fakePanics", savedWheelchair); // или самия обект FakePanic
+            messagingTemplate.convertAndSend("/topic/fakePanics", savedWheelchair);
         }
 
         return savedWheelchair;
