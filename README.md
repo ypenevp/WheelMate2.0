@@ -50,7 +50,11 @@ WheelMate is a modular IoT platform for smart wheelchairs. It combines an ESP32-
 ![wheelmate shematic](https://github.com/user-attachments/assets/af9415c0-5b50-4169-97c9-8c6caff985e2)
 <img width="1287" height="677" alt="image" src="https://github.com/user-attachments/assets/8266cf16-a3da-4ce3-a3f6-f40921e1dc1d" />
 
+---
 
+## OLED Display
+
+![Modules architecture](frontend/assets/display.png)
 
 ---
 
