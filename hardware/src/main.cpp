@@ -1326,6 +1326,7 @@ bool userInChair = false;
 bool panic = false;
 bool fakePanic = false;
 bool panicPending = false;
+bool immobility = false;
 
 bool debugS = true;
 bool debugi2c = true;
@@ -1358,6 +1359,10 @@ volatile bool simCardInserted = false;
 volatile int signalLevel = -1;
 volatile int simVoltage_mV = 0;
 char simOperator[32] = "No for now...";
+
+const unsigned long IMMOBILITY_THRESHOLD_MS = 10000;
+unsigned long userInChairStartTime = 0;
+unsigned long immobilityAlertStartTime = 0;
 
 //////////////////////////////////////////
 // gps
@@ -1514,6 +1519,7 @@ void publishTelemetry()
     doc["userInChair"] = userInChair;
     doc["panic"] = panic;
     doc["fakePanic"] = panicPending;
+    doc["immobility"] = immobility;
 
     String jsonString;
     serializeJson(doc, jsonString);
@@ -1658,12 +1664,22 @@ void readVL53L0X()
             if (currentUserInChair != userInChair)
             {
                 userInChair = currentUserInChair;
-                Serial.printf("[VL53L0X] User in chair changed to: %s (Dist: %d mm)\n", userInChair ? "YES" : "NO", vl53l0x_raw);
+                Serial.printf("[VL53L0X] User in chair changed to: %s (Dist: %d mm)\n", userInChair ? "YES" : "NO", (int)vl53l0x_raw);
+
+                if (userInChair)
+                {
+                    userInChairStartTime = millis();
+                }
+                else
+                {
+                    immobility = false;
+                }
             }
         }
         else if (vl53l0x_raw >= 8190 && userInChair)
         {
             userInChair = false;
+            immobility = false;
             Serial.println("[VL53L0X] Out of range -> User in chair: NO");
         }
     }
@@ -2114,6 +2130,19 @@ void fallDetection()
     }
 }
 
+void checkImmobility()
+{
+    if (userInChair && !panic && !panicPending)
+    {
+        if (!immobility && (millis() - userInChairStartTime >= IMMOBILITY_THRESHOLD_MS))
+        {
+            immobility = true;
+            immobilityAlertStartTime = millis();
+            Serial.println("[IMMOBILITY] Threshold reached! MQTT will be updated.");
+        }
+    }
+}
+
 //////////////////////////////////////////
 // display
 
@@ -2251,6 +2280,32 @@ void showNavigation()
         display.fillTriangle(cx, cy - 20, cx - 20, cy + 8, cx + 20, cy + 8, SSD1306_WHITE);
         display.fillRect(cx - 8, cy + 8, 16, 18, SSD1306_WHITE);
     }
+
+    display.display();
+}
+
+void showImobility()
+{
+    display.clearDisplay();
+    display.setTextColor(SSD1306_WHITE);
+
+    display.setTextSize(2);
+    int16_t x1, y1;
+    uint16_t w, h;
+    display.getTextBounds("Warning", 0, 0, &x1, &y1, &w, &h);
+    display.setCursor((128 - w) / 2, 0);
+    display.println("Warning");
+
+    display.setTextSize(1);
+    display.setCursor(0, 25);
+    display.println("Continuous sitting");
+    display.setCursor(0, 35);
+    display.println("detected!");
+
+    display.drawLine(0, 48, 128, 48, SSD1306_WHITE);
+
+    display.setCursor(0, 52);
+    display.println("Relatives notified.");
 
     display.display();
 }
@@ -2432,10 +2487,13 @@ void loop()
     }
 
     panicIndication();
+    checkImmobility();
     publishTelemetry();
- 
+
     if (panic || panicPending)
         showPanic();
+    else if (immobility && (millis() - immobilityAlertStartTime < 10000))
+        showImobility();
     else if (navigationActive)
         showNavigation();
     else
