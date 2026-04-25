@@ -1364,6 +1364,10 @@ const unsigned long IMMOBILITY_THRESHOLD_MS = 10000;
 unsigned long userInChairStartTime = 0;
 unsigned long immobilityAlertStartTime = 0;
 
+bool relativesLoaded = false;
+unsigned long lastRelativesRequest = 0;
+const unsigned long RELATIVES_REQUEST_INTERVAL = 15000;
+
 //////////////////////////////////////////
 // gps
 
@@ -1468,9 +1472,9 @@ bool reconnectMqtt()
     {
         Serial.println("connected to MQTT broker!");
         mqttReady = true;
+        relativesLoaded = false;
 
         mqttClient.subscribe("wheelmate/navigation");
-
         String configTopic = "wheelmate/config/numbers/" + String(WHEELCHAIR_DB_ID);
         mqttClient.subscribe(configTopic.c_str());
 
@@ -1609,7 +1613,6 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
     {
         JsonDocument doc;
         DeserializationError error = deserializeJson(doc, payload, length);
-
         if (error)
         {
             Serial.print("Failed to parse relative numbers: ");
@@ -1618,7 +1621,6 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
         }
 
         relativesCount = 0;
-
         JsonArray numbers = doc["numbers"].as<JsonArray>();
         for (JsonVariant v : numbers)
         {
@@ -1629,6 +1631,12 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
                 relativesCount++;
             }
         }
+
+        if (relativesCount > 0)
+        {
+            relativesLoaded = true;
+            Serial.printf("[MQTT] Relatives loaded: %d numbers. Will not request again.\n", relativesCount);
+        }
     }
 }
 
@@ -1637,6 +1645,8 @@ void mqttCallback(char *topic, byte *payload, unsigned int length)
 
 void readMPU()
 {
+    if (!mpuReady)
+        return;
     int16_t ax, ay, az, gx, gy, gz;
     mpu.getMotion6(&ax, &ay, &az, &gx, &gy, &gz);
 
@@ -2471,6 +2481,17 @@ void loop()
         reconnectMqtt();
 
     mqttClient.loop();
+
+    if (mqttClient.connected() && !relativesLoaded)
+    {
+        if (millis() - lastRelativesRequest >= RELATIVES_REQUEST_INTERVAL)
+        {
+            lastRelativesRequest = millis();
+            String requestTopic = "wheelmate/request/numbers/" + String(WHEELCHAIR_DB_ID);
+            mqttClient.publish(requestTopic.c_str(), "{}");
+            Serial.println("[MQTT] Relatives not yet loaded — re-requesting...");
+        }
+    }
 
     if (now - lastSensorRead >= SENSOR_INTERVAL_MS)
     {
